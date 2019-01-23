@@ -118,6 +118,18 @@
     coriolis        = 'latitude'
     kridge          = 1
     ktransport      = 1
+    kmax            = 1000
+    precond         = 3
+    im_fgmres       = 50
+    im_pgmres       = 5
+    maxits_fgmres   = 50
+    maxits_pgmres   = 5
+    iout            = 1
+    ioutpgmres      = 1
+    gammaNL         = 1e-8
+    gamma           = 1e-2
+    epsprecond      = 1e-6
+
 /
 
 &shortwave_nml
@@ -565,4 +577,3 @@
     f_Cdn_atm      = 'x'
     f_Cdn_ocn      = 'x'
 /
-
