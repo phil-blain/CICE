@@ -95,6 +95,8 @@
                                 kevp_kernel, &
                                 basalstress, k1, Ktens, e_ratio, coriolis, &
                                 kridge, ktransport, brlx, arlx
+      use ice_dyn_vp, only: kmax, precond, im_fgmres, im_pgmres, maxits_fgmres, &
+                            maxits_pgmres, iout, ioutpgmres, gammaNL, gamma, epsprecond
       use ice_transport_driver, only: advection
       use ice_restoring, only: restore_ice
 #ifdef CESMCOUPLED
@@ -181,7 +183,9 @@
         advection,      coriolis,       kridge,         ktransport,     &
         kstrength,      krdg_partic,    krdg_redist,    mu_rdg,         &
         e_ratio,        Ktens,          Cf,             basalstress,    &
-        k1
+        k1,             kmax,           precond,        im_fgmres,      &
+        im_pgmres,      maxits_fgmres,  maxits_pgmres,  iout,           &
+        ioutpgmres,     gammaNL,        gamma,          epsprecond
 
       namelist /shortwave_nml/ &
         shortwave,      albedo_type,                                    &
@@ -294,6 +298,17 @@
       k1 = 8.0_dbl_kind      ! 1st free parameter for landfast parameterization
       Ktens = 0.0_dbl_kind   ! T=Ktens*P (tensile strength: see Konig and Holland, 2010)
       e_ratio = 2.0_dbl_kind ! EVP ellipse aspect ratio
+      kmax = 1000            ! max nb of iteration for nonlinear solver
+      precond = 3            ! preconditioner for fgmres: 1: identity, 2: diagonal 3: pgmres + diag
+      im_fgmres = 50         ! size of fgmres Krylov subspace
+      im_pgmres = 5          ! size of pgmres Krylov subspace
+      maxits_fgmres = 50     ! max nb of iteration for fgmres
+      maxits_pgmres = 5      ! max nb of iteration for pgmres
+      iout = 1               ! print fgmres info (0: nothing printed, 1: 1st ite only, 2: all iterations)
+      ioutpgmres = 1         ! print pgmres info
+      gammaNL = 1e-8_dbl_kind    ! nonlinear stopping criterion: gammaNL*res(k=0)
+      gamma = 1e-2_dbl_kind      ! fgmres stopping criterion: gamma*res(k)
+      epsprecond = 1e-6_dbl_kind ! pgmres stopping criterion: epsprecond*res(k)
       advection  = 'remap'   ! incremental remapping transport scheme
       shortwave = 'ccsm3'    ! 'ccsm3' or 'dEdd' (delta-Eddington)
       albedo_type = 'ccsm3'  ! 'ccsm3' or 'constant'
