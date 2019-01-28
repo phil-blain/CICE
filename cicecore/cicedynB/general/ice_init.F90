@@ -96,7 +96,8 @@
                                 basalstress, k1, Ktens, e_ratio, coriolis, &
                                 kridge, ktransport, brlx, arlx
       use ice_dyn_vp, only: kmax, precond, im_fgmres, im_pgmres, maxits_fgmres, &
-                            maxits_pgmres, iout, ioutpgmres, gammaNL, gamma, epsprecond
+                            maxits_pgmres, monitor_nonlin, monitor_fgmres, &
+                            monitor_pgmres, gammaNL, gamma, epsprecond
       use ice_transport_driver, only: advection
       use ice_restoring, only: restore_ice
 #ifdef CESMCOUPLED
@@ -188,8 +189,9 @@
         kstrength,      krdg_partic,    krdg_redist,    mu_rdg,         &
         e_ratio,        Ktens,          Cf,             basalstress,    &
         k1,             kmax,           precond,        im_fgmres,      &
-        im_pgmres,      maxits_fgmres,  maxits_pgmres,  iout,           &
-        ioutpgmres,     gammaNL,        gamma,          epsprecond
+        im_pgmres,      maxits_fgmres,  maxits_pgmres,  monitor_nonlin, &
+        monitor_fgmres, monitor_pgmres, gammaNL,        gamma,          &
+        epsprecond
 
       namelist /shortwave_nml/ &
         shortwave,      albedo_type,                                    &
@@ -308,8 +310,9 @@
       im_pgmres = 5          ! size of pgmres Krylov subspace
       maxits_fgmres = 50     ! max nb of iteration for fgmres
       maxits_pgmres = 5      ! max nb of iteration for pgmres
-      iout = 1               ! print fgmres info (0: nothing printed, 1: 1st ite only, 2: all iterations)
-      ioutpgmres = 1         ! print pgmres info
+      monitor_nonlin = .false. ! print nonlinear solver info
+      monitor_fgmres = 1     ! print fgmres info (0: nothing printed, 1: 1st ite only, 2: all iterations)
+      monitor_pgmres = 1     ! print pgmres info (0: nothing printed, 1: all iterations)
       gammaNL = 1e-8_dbl_kind    ! nonlinear stopping criterion: gammaNL*res(k=0)
       gamma = 1e-2_dbl_kind      ! fgmres stopping criterion: gamma*res(k)
       epsprecond = 1e-6_dbl_kind ! pgmres stopping criterion: epsprecond*res(k)
@@ -582,6 +585,18 @@
       call broadcast_scalar(coriolis,           master_task)
       call broadcast_scalar(kridge,             master_task)
       call broadcast_scalar(ktransport,         master_task)
+      call broadcast_scalar(kmax,               master_task)
+      call broadcast_scalar(precond,            master_task)
+      call broadcast_scalar(im_fgmres,          master_task)
+      call broadcast_scalar(im_pgmres,          master_task)
+      call broadcast_scalar(maxits_fgmres,      master_task)
+      call broadcast_scalar(maxits_pgmres,      master_task)
+      call broadcast_scalar(monitor_nonlin,     master_task)      
+      call broadcast_scalar(monitor_fgmres,     master_task)
+      call broadcast_scalar(monitor_pgmres,     master_task)
+      call broadcast_scalar(gammaNL,            master_task)      
+      call broadcast_scalar(gamma,              master_task)
+      call broadcast_scalar(epsprecond,         master_task)
       call broadcast_scalar(conduct,            master_task)
       call broadcast_scalar(R_ice,              master_task)
       call broadcast_scalar(R_pnd,              master_task)
@@ -1006,6 +1021,8 @@
            write(nu_diag,1021) ' kdyn                      = ','evp ', kdyn
          elseif (kdyn == 2) then
            write(nu_diag,1021) ' kdyn                      = ','eap ', kdyn
+         elseif (kdyn == 3) then
+           write(nu_diag,1021) ' kdyn                      = ','vp ', kdyn
          else
            write(nu_diag,1020) ' kdyn                      = ', kdyn
          endif
@@ -1036,6 +1053,20 @@
          write(nu_diag,1005) ' k1                        = ', k1
          write(nu_diag,1005) ' Ktens                     = ', Ktens
          write(nu_diag,1005) ' e_ratio                   = ', e_ratio    
+         if (kdyn == 3) then
+            write(nu_diag,1020) ' kmax                      = ', kmax
+            write(nu_diag,1020) ' precond                   = ', precond
+            write(nu_diag,1020) ' im_fgmres                 = ', im_fgmres
+            write(nu_diag,1020) ' im_pgmres                 = ', im_pgmres
+            write(nu_diag,1020) ' maxits_fgmres             = ', maxits_fgmres
+            write(nu_diag,1020) ' maxits_pgmres             = ', maxits_pgmres
+            write(nu_diag,1010) ' monitor_nonlin            = ', monitor_nonlin
+            write(nu_diag,1020) ' monitor_fgmres            = ', monitor_fgmres
+            write(nu_diag,1020) ' monitor_pgmres            = ', monitor_pgmres
+            write(nu_diag,1008) ' gammaNL                   = ', gammaNL
+            write(nu_diag,1008) ' gamma                     = ', gamma
+            write(nu_diag,1008) ' epsprecond                = ', epsprecond
+         endif
          write(nu_diag,1030) ' advection                 = ', &
                                trim(advection)
          write(nu_diag,1030) ' shortwave                 = ', &
@@ -1234,6 +1265,7 @@
 
  1000    format (a30,2x,f9.2)  ! a30 to align formatted, unformatted statements
  1005    format (a30,2x,f12.6)  ! float
+ 1008    format (a30,2x,d12.6)  ! float, exponential notation
  1010    format (a30,2x,l6)    ! logical
  1020    format (a30,2x,i6)    ! integer
  1021    format (a30,2x,a8,i6) ! char, int
