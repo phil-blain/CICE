@@ -118,7 +118,7 @@
     coriolis        = 'latitude'
     kridge          = 1
     ktransport      = 1
-    kmax            = 1000
+    maxits_nonlin   = 1000
     precond         = 3
     im_fgmres       = 50
     im_pgmres       = 5
