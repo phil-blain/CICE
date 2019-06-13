@@ -52,7 +52,7 @@ set shortcase = `echo ${ICE_CASENAME} | cut -c1-15`
 #==========================================
 
 cat >! ${jobfile} << EOF0
-#!/bin/csh -f 
+#!/bin/tcsh -f 
 EOF0
 
 #==========================================
