@@ -52,6 +52,12 @@ LIB_MPI := $(IMPILIBDIR)
 #SLIBS   := -L$(LIB_NETCDF) -lnetcdff -lnetcdf -L$(LIB_PNETCDF) -lpnetcdf -lgptl
 #SLIBS   := -L$(LIB_NETCDF) -lnetcdff -lnetcdf
 
+ifeq ($(ICE_IOTYPE), netcdf)
+   INCLDIR += $(shell nf-config --fflags)
+   SLIBS   := $(shell nf-config --flibs)
+endif
+
+
 ifeq ($(compile_threaded), true) 
    LDFLAGS += -openmp 
    CFLAGS += -openmp 
