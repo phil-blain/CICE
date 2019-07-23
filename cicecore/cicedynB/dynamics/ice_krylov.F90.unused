@@ -53,6 +53,14 @@
          indxui(:,:)  , & ! compressed index in i-direction
          indxuj(:,:)      ! compressed index in j-direction
 
+      real (kind=dbl_kind), allocatable :: &
+         zetaD(:,:,:,:)      ! zetaD = 2*zeta (viscous coefficient)
+
+      real (kind=dbl_kind), allocatable :: &
+         vrel(:,:,:)     , & ! coefficient for tauw 
+         Cb(:,:,:)       , & ! seabed stress coefficient
+         umassdti(:,:,:)     ! mass of U-cell/dte (kg/m^2 s)
+
 !=======================================================================
 
       contains
@@ -67,9 +75,9 @@
       subroutine fgmres (icellt_in,   icellu_in,  &
                          indxti_in,   indxtj_in,  &
                          indxui_in,   indxuj_in,  &
-                         zetaD,             &
-                         Cb,         vrel,    &
-                         umassdti,          &
+                         zetaD_in,                &
+                         Cb_in,       vrel_in,    &
+                         umassdti_in,             &
                          solx,       soly,    &
                          bx,         by,      &
                          diagx,      diagy,   &
@@ -88,12 +96,12 @@
          indxuj_in    ! compressed index in j-direction
 
       real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks,4), intent(in) :: &
-         zetaD      ! zetaD = 2*zeta (viscous coefficient)
+         zetaD_in   ! zetaD = 2*zeta (viscous coefficient)
 
       real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(in) :: &
-         vrel     , & ! coefficient for tauw 
-         Cb       , & ! seabed stress coefficient
-         umassdti     ! mass of U-cell/dte (kg/m^2 s)
+         vrel_in  , & ! coefficient for tauw 
+         Cb_in    , & ! seabed stress coefficient
+         umassdti_in  ! mass of U-cell/dte (kg/m^2 s)
 
       real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(inout) :: &
          solx     , & ! Initial guess on input, approximate solution on output (x components)
@@ -187,12 +195,20 @@
                indxtj(nx_block*ny_block, max_blocks), &
                indxui(nx_block*ny_block, max_blocks), & 
                indxuj(nx_block*ny_block, max_blocks))
-      icellt = icellt_in
-      icellu = icellu_in
-      indxti = indxti_in
-      indxtj = indxtj_in
-      indxui = indxui_in 
-      indxuj = indxuj_in
+      allocate(vrel    (nx_block, ny_block, max_blocks), &
+               Cb      (nx_block, ny_block, max_blocks), &
+               umassdti(nx_block, ny_block, max_blocks), &
+               zetaD   (nx_block, ny_block, max_blocks, 4))
+      icellt   = icellt_in
+      icellu   = icellu_in
+      indxti   = indxti_in
+      indxtj   = indxtj_in
+      indxui   = indxui_in 
+      indxuj   = indxuj_in
+      vrel     = vrel_in
+      Cb       = Cb_in
+      umassdti = umassdti_in
+      zetaD    = zetaD_in
       
       ! Here we go !
 
@@ -503,23 +519,13 @@
 !
 ! authors: Stéphane Gaudreault, Abdessamad Qaddouri, Philippe Blain, ECCC
 
-      subroutine pgmres (zetaD,             &
-                         Cb,         vrel,    &
-                         umassdti,          &
-                         solx,       soly,    &
-                         bx,         by,      &
-                         diagx,      diagy,   &
-                         tolerance, maxinner, maxouter, nbiter, conv)
+      subroutine pgmres (solx,       soly,     &
+                         bx,         by,       &
+                         diagx,      diagy,    &
+                         tolerance,  maxinner, &
+                         maxouter, nbiter, conv)
 
       use ice_dyn_vp, only: precond
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks,4), intent(in) :: &
-         zetaD      ! zetaD = 2*zeta (viscous coefficient)
-
-      real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(in) :: &
-         vrel     , & ! coefficient for tauw 
-         Cb       , & ! seabed stress coefficient
-         umassdti     ! mass of U-cell/dte (kg/m^2 s)
 
       real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(inout) :: &
          solx     , & ! Initial guess on input, approximate solution on output (x components)
@@ -610,7 +616,7 @@
       
       conv = c1
       
-      precond_type = precond
+      precond_type = 2 ! Jacobi preconditioner
       
       ! Residual of the initial iterate
       
@@ -855,9 +861,8 @@
          end do
          
          ! Call preconditioner
-         call precondition(workspace_x(:,:,:), &
-                           workspace_y(:,:,:), &
-                           workspace_x , workspace_y    , &
+         call precondition(workspace_x , workspace_y, &
+                           workspace_x , workspace_y, &
                            precond_type, diagx, diagy)
          
          solx = solx + workspace_x
@@ -942,12 +947,27 @@
          ij      , & ! compressed index
          i, j        ! grid indices
 
+      real (kind=dbl_kind) :: &
+         tolerance   ! Tolerance for pgmres
+
+      integer (kind=int_kind) :: &
+         maxinner    ! Restart parameter for pgmres
+
+      integer (kind=int_kind) :: &
+         maxouter    ! Maximum number of outer iterations for pgmres
+
+      integer (kind=int_kind) :: &
+         nbiter      ! Total number of iteration pgmres performed
+
+      real (kind=dbl_kind) :: &
+         conv        ! !phb DESCRIBE IF WE KEEP for pgmres
+
       character(len=*), parameter :: subname = '(precondition)'
 
       if     (precond_type == 1) then ! identity (no preconditioner)
          wx = vx
          wy = vy
-      elseif (precond_type == 2) then ! Jacobi preconditioner
+      elseif (precond_type == 2) then ! Jacobi preconditioner (diagonal)
          !$OMP PARALLEL DO PRIVATE(iblk)
          do iblk = 1, nblocks
             do ij =1, icellu(iblk)
@@ -960,7 +980,17 @@
          enddo
          !$OMP END PARALLEL DO 
       elseif (precond_type == 3) then ! PGMRES (Jacobi-preconditioned GMRES)
-         ! !phb TODO!!!
+         ! Initialize preconditioned vector to 0 !phb try with wx = vx or vx/diagx
+         wx = c0
+         wy = c0
+         tolerance = c1
+         maxinner = 10
+         maxouter = 100
+         call pgmres (wx,         wy,       &
+                      vx,         vy,       &
+                      diagx,      diagy,    &
+                      tolerance,  maxinner, &
+                      maxouter, nbiter, conv)
       else
          
       endif
