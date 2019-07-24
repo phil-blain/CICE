@@ -1284,9 +1284,15 @@
             exit
          endif
          
-         ! Put initial guess for FGMRES in solx,soly
+         ! Put initial guess for FGMRES in solx,soly and sol (needed for anderson)
          solx = uprev_k
          soly = vprev_k
+         ! Form sol vector for fgmres (sol is iniguess at the beginning)
+         call arrays_to_vec (nx_block, ny_block, nblocks,      &
+                             max_blocks, icellu (:), ntot,     &
+                             indxui    (:,:), indxuj(:,:),     &
+                             uprev_k (:,:,:), vprev_k (:,:,:), &
+                             sol(:))
          
          ! Compute fixed point map g(x)
          if (fpfunc_andacc == 1) then
@@ -1319,6 +1325,7 @@
             call fgmres (zetaD,               &
                          Cb,         vrel,    &
                          umassdti,            &
+                         halo_info_mask,      &
                          solx,       soly,    &
                          bx,         by,      &
                          Diagu,      Diagv,   &
@@ -3838,6 +3845,7 @@
       subroutine fgmres (zetaD,               &
                          Cb,         vrel,    &
                          umassdti,            &
+                         halo_info_mask,      &
                          solx,       soly,    &
                          bx,         by,      &
                          diagx,      diagy,   &
@@ -3851,6 +3859,9 @@
          vrel  , & ! coefficient for tauw 
          Cb    , & ! seabed stress coefficient
          umassdti  ! mass of U-cell/dte (kg/m^2 s)
+
+      type (ice_halo) :: &
+         halo_info_mask !  ghost cell update info for masked halo
 
       real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(inout) :: &
          solx     , & ! Initial guess on input, approximate solution on output (x components)
@@ -3940,12 +3951,16 @@
 
       ! Here we go !
 
+      ! Initialize
       outiter = 0
       nbiter = 0
       
       conv = c1
       
       precond_type = precond
+      
+      ! workspace_x = c0
+      ! workspace_y = c0
       
       ! Residual of the initial iterate
       
@@ -4042,6 +4057,9 @@
             wwx(:,:,:,initer) = workspace_x
             wwy(:,:,:,initer) = workspace_y
             
+            ! Update workspace with boundary values
+            call ice_HaloUpdate_vel(workspace_x, workspace_y,  &
+                                    halo_info_mask)
             !$OMP PARALLEL DO PRIVATE(iblk)
             do iblk = 1, nblocks
                call matvec (nx_block               , ny_block,              &
@@ -4351,12 +4369,16 @@
       
       ! Here we go !
 
+      ! Initialize
       outiter = 0
       nbiter = 0
       
       conv = c1
       
       precond_type = 2 ! Jacobi preconditioner
+      
+      workspace_x = c0
+      workspace_y = c0
       
       ! Residual of the initial iterate
       
@@ -4450,6 +4472,7 @@
                               workspace_x , workspace_y    , &
                               precond_type, diagx, diagy)
             
+            ! !phb haloUpdate would go here (for workspace_x, _y)
             !$OMP PARALLEL DO PRIVATE(iblk)
             do iblk = 1, nblocks
                call matvec (nx_block               , ny_block,              &
