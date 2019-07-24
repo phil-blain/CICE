@@ -36,6 +36,7 @@
 
       use ice_kinds_mod
       use ice_blocks, only: nx_block, ny_block
+      use ice_boundary, only: ice_halo
       use ice_constants, only: field_loc_center, field_loc_NEcorner, &
           field_type_scalar, field_type_vector
       use ice_constants, only: c0, p027, p055, p111, p166, &
@@ -188,7 +189,7 @@
       subroutine imp_solver (dt)
 
       use ice_arrays_column, only: Cdn_ocn
-      use ice_boundary, only: ice_halo, ice_HaloMask, ice_HaloUpdate, &
+      use ice_boundary, only: ice_HaloMask, ice_HaloUpdate, &
           ice_HaloDestroy, ice_HaloUpdate_stress
       use ice_blocks, only: block, get_block, nx_block, ny_block
       use ice_domain, only: blocks_ice, halo_info, maskhalo_dyn
@@ -643,7 +644,7 @@
 
       use ice_arrays_column, only: Cdn_ocn
       use ice_blocks, only: nx_block, ny_block
-      use ice_boundary, only: ice_halo, ice_HaloUpdate
+      use ice_boundary, only: ice_HaloUpdate
       use ice_domain, only: halo_info, maskhalo_dyn
       use ice_domain_size, only: max_blocks
       use ice_flux, only: uocn, vocn, fm, Tbu
@@ -1069,7 +1070,7 @@
 
       use ice_arrays_column, only: Cdn_ocn
       use ice_blocks, only: nx_block, ny_block
-      use ice_boundary, only: ice_halo, ice_HaloUpdate
+      use ice_boundary, only: ice_HaloUpdate
       use ice_constants, only: c1
       use ice_domain, only: halo_info, maskhalo_dyn
       use ice_domain_size, only: max_blocks
@@ -4796,7 +4797,7 @@
 
       subroutine ice_HaloUpdate_vel(uvel, vvel, halo_info_mask)
 
-      use ice_boundary, only: ice_halo, ice_HaloUpdate
+      use ice_boundary, only: ice_HaloUpdate
       use ice_constants, only: field_loc_NEcorner, field_type_vector
       use ice_domain, only: halo_info, maskhalo_dyn
       use ice_timers, only: timer_bound, ice_timer_start, ice_timer_stop
