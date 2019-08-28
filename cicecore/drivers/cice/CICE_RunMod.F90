@@ -169,6 +169,13 @@
 
       character(len=*), parameter :: subname = '(ice_step)'
 
+      character (len=char_len) :: plabeld
+
+      plabeld = 'beginning time step'
+      do iblk = 1, nblocks
+         call debug_ice (iblk, plabeld)
+      enddo
+
       call icepack_query_parameters(calc_Tsfc_out=calc_Tsfc, skl_bgc_out=skl_bgc, &
            solve_zsal_out=solve_zsal, z_tracers_out=z_tracers, ktherm_out=ktherm)
       call icepack_query_tracer_flags(tr_iage_out=tr_iage, tr_FY_out=tr_FY, &
@@ -210,13 +217,27 @@
 
                if (calc_Tsfc) call prep_radiation (iblk)
 
+               plabeld = 'post prep_radiation'
+               call debug_ice (iblk, plabeld)
+
       !-----------------------------------------------------------------
       ! thermodynamics and biogeochemistry
       !-----------------------------------------------------------------
             
                call step_therm1     (dt, iblk) ! vertical thermodynamics
+
+               plabeld = 'post step_therm1'
+               call debug_ice (iblk, plabeld)
+
                call biogeochemistry (dt, iblk) ! biogeochemistry
+
+               plabeld = 'post biogeochemistry'
+               call debug_ice (iblk, plabeld)
+
                call step_therm2     (dt, iblk) ! ice thickness distribution thermo
+
+               plabeld = 'post step_therm2'
+               call debug_ice (iblk, plabeld)
 
             endif
 
@@ -239,6 +260,9 @@
             ! momentum, stress, transport
             call step_dyn_horiz (dt_dyn)
 
+            plabeld = 'post step_dyn_horiz'
+            call debug_ice (iblk, plabeld)
+
             ! ridging
             !$OMP PARALLEL DO PRIVATE(iblk)
             do iblk = 1, nblocks
@@ -252,6 +276,11 @@
 
          enddo
 
+         plabeld = 'post dynamics'
+         do iblk = 1, nblocks
+            call debug_ice (iblk, plabeld)
+         enddo
+
       !-----------------------------------------------------------------
       ! albedo, shortwave radiation
       !-----------------------------------------------------------------
@@ -259,17 +288,22 @@
          call ice_timer_start(timer_column)  ! column physics
          call ice_timer_start(timer_thermo)  ! thermodynamics
 
-!MHRI: CHECK THIS OMP
          !$OMP PARALLEL DO PRIVATE(iblk)
          do iblk = 1, nblocks
 
             if (ktherm >= 0) call step_radiation (dt, iblk)
+
+            plabeld = 'post step_radiation'
+            call debug_ice (iblk, plabeld)
 
       !-----------------------------------------------------------------
       ! get ready for coupling and the next time step
       !-----------------------------------------------------------------
 
             call coupling_prep (iblk)
+
+            plabeld = 'post coupling_prep'
+            call debug_ice (iblk, plabeld)
 
          enddo ! iblk
          !$OMP END PARALLEL DO
