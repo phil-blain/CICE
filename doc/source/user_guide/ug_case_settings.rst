@@ -161,8 +161,8 @@ Table of namelist options
    "","", "``1``", "new formula with round numbers", ""
    "","", "``2``", "WMO standard categories", ""
    "","", "``-1``", "one category", ""
-   "","``dxrect``", "real", "x-direction grid spacing (cm) for rectangular grid", ""
-   "","``dyrect``", "real", "y-direction grid spacing (cm) for rectangular grid", ""
+   "","``dxrect``", "real", "x-direction grid spacing (m) for rectangular grid", ""
+   "","``dyrect``", "real", "y-direction grid spacing (m) for rectangular grid", ""
    "","``ncat``", "integer", "number of ice thickness categories", "5"
    "","``nilyr``", "integer", "number of vertical layers in ice", "7"
    "","``nslyr``", "integer", "number of vertical layers in snow", "1"
@@ -397,6 +397,3 @@ Table of namelist options
    "","", "``x``", "do not write ``<var>`` to history", ""
    "","", "``md``", "*e.g.,* write both monthly and daily files", ""
    "","``f_<var>_ai``", "", "grid cell average of ``<var>`` (:math:`\times a_i`)", ""
-
-
-

@@ -52,8 +52,8 @@
     use_bathymetry = .false.
     gridcpl_file = 'unknown_gridcpl_file'
     kcatbound    = 0
-    dxrect         = 30.e5
-    dyrect         = 30.e5
+    dxrect         = 30.e3
+    dyrect         = 30.e3
     close_boundaries = .false.
     ncat         = 5
     nilyr        = 7
@@ -565,4 +565,3 @@
     f_Cdn_atm      = 'x'
     f_Cdn_ocn      = 'x'
 /
-

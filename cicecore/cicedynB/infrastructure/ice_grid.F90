@@ -1117,7 +1117,7 @@
       subroutine rectgrid
 
       use ice_blocks, only: nx_block, ny_block
-      use ice_constants, only: c0, c1, c2, radius, cm_to_m, &
+      use ice_constants, only: c0, c1, c2, radius, &
           field_loc_center, field_loc_NEcorner, field_type_scalar
       use ice_domain, only: close_boundaries
 
@@ -1163,7 +1163,7 @@
 
       if (my_task == master_task) then
          work_g1 = c0
-         length = dxrect*cm_to_m/radius*rad_to_deg
+         length = dxrect/radius*rad_to_deg
 
 !         work_g1(1,:) = -55._dbl_kind   ! Weddell Sea
          work_g1(1,:) = -156.5_dbl_kind ! Barrow AK
@@ -1182,7 +1182,7 @@
 
       if (my_task == master_task) then
          work_g1 = c0
-         length = dyrect*cm_to_m/radius*rad_to_deg
+         length = dyrect/radius*rad_to_deg
 
 !         work_g1(:,1) = -75._dbl_kind ! Weddell Sea
          work_g1(:,1) = 71.35_dbl_kind ! Barrow AK
@@ -1405,7 +1405,7 @@
 
       subroutine primary_grid_lengths_HTN(work_g)
 
-      use ice_constants, only: p5, c2, cm_to_m, &
+      use ice_constants, only: p5, c2,          &
           field_loc_center, field_loc_NEcorner, &
           field_loc_Nface, field_type_scalar
 
@@ -1429,11 +1429,6 @@
       endif
 
       if (my_task == master_task) then
-      do j = 1, ny_global
-      do i = 1, nx_global
-         work_g(i,j) = work_g(i,j) * cm_to_m                ! HTN
-      enddo
-      enddo
       do j = 1, ny_global
       do i = 1, nx_global
          ! assume cyclic; noncyclic will be handled during scatter
@@ -1475,7 +1470,7 @@
 
       subroutine primary_grid_lengths_HTE(work_g)
 
-      use ice_constants, only: p5, c2, cm_to_m, &
+      use ice_constants, only: p5, c2,          &
           field_loc_center, field_loc_NEcorner, &
           field_loc_Eface, field_type_scalar
 
@@ -1499,11 +1494,6 @@
       endif
 
       if (my_task == master_task) then
-         do j = 1, ny_global
-         do i = 1, nx_global
-            work_g(i,j) = work_g(i,j) * cm_to_m                ! HTE
-         enddo
-         enddo
          do j = 1, ny_global-1
          do i = 1, nx_global
             work_g2(i,j) = p5*(work_g(i,j) + work_g(i,j+1)) ! dyu

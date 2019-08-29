@@ -223,8 +223,8 @@ detailed in :cite:`Hunke01`.  It is configured to run a 72-hour simulation with
 thermodynamics disabled in a rectangular domain (80 x 80 grid cells) with a land
 boundary around the entire domain.  It includes the following namelist modifications:
 
-- ``dxrect``: ``16.e5`` cm
-- ``dyrect``: ``16.e5`` cm
+- ``dxrect``: ``16.e3`` m
+- ``dyrect``: ``16.e3`` m
 - ``ktherm``: ``-1`` (disables thermodynamics)
 - ``coriolis``: ``zero`` (zero coriolis force)
 - ``ice_data_type`` : ``box2001`` (special ice concentration initialization)
@@ -250,8 +250,8 @@ detailed in :cite:`Zalesak79`.  It is configured to run a 12-day simulation with
 thermodynamics, ridging and dynamics disabled, in a square domain (80 x 80 grid cells) with a land
 boundary around the entire domain.  It includes the following namelist modifications:
 
-- ``dxrect``: ``10.e5`` cm (10 km)
-- ``dyrect``: ``10.e5`` cm (10 km)
+- ``dxrect``: ``10.e3`` m (10 km)
+- ``dyrect``: ``10.e3`` m (10 km)
 - ``ktherm``: ``-1`` (disables thermodynamics)
 - ``kridge``: ``-1`` (disables ridging)
 - ``kdyn``: ``-1`` (disables dynamics)
@@ -945,5 +945,3 @@ If the regression comparisons fail, then you may want to run the QC test,
   INFO:__main__:Quadratic Skill Test Passed for Southern Hemisphere
   INFO:__main__:
   INFO:__main__:Quality Control Test PASSED
-
-
