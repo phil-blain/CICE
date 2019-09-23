@@ -13,8 +13,7 @@ MODULE ice_fldread_std
    use ice_domain_size
    use ice_communicate, only: my_task, master_task
    use ice_constants
-   use ice_calendar, only: istep1, sec, dt, yday, &
-                           dats_zero
+   use ice_calendar, only: istep1, sec, dt, yday
    use ice_domain
    use ice_gather_scatter
    use ice_fileunits, only: nu_diag
