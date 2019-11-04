@@ -99,7 +99,7 @@
                             maxits_pgmres, monitor_nonlin, monitor_fgmres, &
                             monitor_pgmres, gammaNL, gamma, epsprecond, &
                             algo_nonlin, fpfunc_andacc, im_andacc, reltol_andacc, &
-                            damping_andacc, start_andacc, use_mean_vrel
+                            damping_andacc, start_andacc, use_mean_vrel, ortho_type
       use ice_transport_driver, only: advection
       use ice_restoring, only: restore_ice
 #ifdef CESMCOUPLED
@@ -190,7 +190,8 @@
         im_pgmres,      maxits_fgmres,  maxits_pgmres,  monitor_nonlin, &
         monitor_fgmres, monitor_pgmres, gammaNL,        gamma,          &
         epsprecond,     algo_nonlin,    im_andacc,      reltol_andacc,  &
-        damping_andacc, start_andacc,   fpfunc_andacc,  use_mean_vrel
+        damping_andacc, start_andacc,   fpfunc_andacc,  use_mean_vrel,  &
+        ortho_type
 
       namelist /shortwave_nml/ &
         shortwave,      albedo_type,                                    &
@@ -312,6 +313,7 @@
       monitor_nonlin = .false. ! print nonlinear solver info
       monitor_fgmres = 1     ! print fgmres info (0: nothing printed, 1: 1st ite only, 2: all iterations)
       monitor_pgmres = 1     ! print pgmres info (0: nothing printed, 1: all iterations)
+      ortho_type = 'cgs'     ! orthogonalization procedure 'cgs' or 'mgs'
       gammaNL = 1e-8_dbl_kind    ! nonlinear stopping criterion: gammaNL*res(k=0)
       gamma = 1e-2_dbl_kind      ! fgmres stopping criterion: gamma*res(k)
       epsprecond = 1e-6_dbl_kind ! pgmres stopping criterion: epsprecond*res(k)
@@ -600,6 +602,7 @@
       call broadcast_scalar(monitor_nonlin,     master_task)
       call broadcast_scalar(monitor_fgmres,     master_task)
       call broadcast_scalar(monitor_pgmres,     master_task)
+      call broadcast_scalar(ortho_type,         master_task)
       call broadcast_scalar(gammaNL,            master_task)
       call broadcast_scalar(gamma,              master_task)
       call broadcast_scalar(epsprecond,         master_task)
@@ -1074,6 +1077,7 @@
             write(nu_diag,1010) ' monitor_nonlin            = ', monitor_nonlin
             write(nu_diag,1020) ' monitor_fgmres            = ', monitor_fgmres
             write(nu_diag,1020) ' monitor_pgmres            = ', monitor_pgmres
+            write(nu_diag,1030) ' ortho_type                = ', ortho_type
             write(nu_diag,1008) ' gammaNL                   = ', gammaNL
             write(nu_diag,1008) ' gamma                     = ', gamma
             write(nu_diag,1008) ' epsprecond                = ', epsprecond
