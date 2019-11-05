@@ -3962,8 +3962,11 @@
       
       precond_type = precond
       
-      ! workspace_x = c0
-      ! workspace_y = c0
+      ! Cells with no ice should be zero-initialized
+      workspace_x = c0
+      workspace_y = c0
+      arnoldi_basis_x = c0
+      arnoldi_basis_y = c0
       
       ! Residual of the initial iterate
       
@@ -4345,8 +4348,11 @@
       
       precond_type = 2 ! Jacobi preconditioner
       
+      ! Cells with no ice should be zero-initialized
       workspace_x = c0
       workspace_y = c0
+      arnoldi_basis_x = c0
+      arnoldi_basis_y = c0
       
       ! Residual of the initial iterate
       
