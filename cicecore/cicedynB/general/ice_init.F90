@@ -313,7 +313,7 @@
       monitor_nonlin = .false. ! print nonlinear solver info
       monitor_fgmres = 1     ! print fgmres info (0: nothing printed, 1: 1st ite only, 2: all iterations)
       monitor_pgmres = 1     ! print pgmres info (0: nothing printed, 1: all iterations)
-      ortho_type = 'cgs'     ! orthogonalization procedure 'cgs' or 'mgs'
+      ortho_type = 'mgs'     ! orthogonalization procedure 'cgs' or 'mgs'
       gammaNL = 1e-8_dbl_kind    ! nonlinear stopping criterion: gammaNL*res(k=0)
       gamma = 1e-2_dbl_kind      ! fgmres stopping criterion: gamma*res(k)
       epsprecond = 1e-6_dbl_kind ! pgmres stopping criterion: epsprecond*res(k)
