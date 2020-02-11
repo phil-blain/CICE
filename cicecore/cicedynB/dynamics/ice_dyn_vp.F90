@@ -3537,7 +3537,7 @@
       
 !=======================================================================
 
-! Form the diagonal of the matrix A(u,v) (first part of the computation)
+! Form the diagonal of the matrix A(u,v) (second part of the computation)
 ! Part 2: compute diagonal
 
       subroutine formDiag_step2 (nx_block,   ny_block, &
