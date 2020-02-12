@@ -4968,7 +4968,7 @@
       enddo
       !$OMP END PARALLEL DO
 
-   end subroutine ice_HaloUpdate_vel
+      end subroutine ice_HaloUpdate_vel
 
 !=======================================================================
 
