@@ -3730,6 +3730,9 @@
       integer (kind=int_kind) :: &
          precond_type ! type of preconditioner
 
+      character(len=char_len) :: &
+         ortho_type ! type of orthogonalization
+
       real (kind=dbl_kind) :: relative_tolerance, r0 !phb DESCRIBE if we keep
 
       real (kind=dbl_kind) :: &
@@ -3749,6 +3752,7 @@
       conv = c1
       
       precond_type = 2 ! Jacobi preconditioner
+      ortho_type = 'cgs' ! classical gram-schmidt
       
       ! Cells with no ice should be zero-initialized
       workspace_x = c0
