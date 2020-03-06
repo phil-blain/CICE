@@ -53,9 +53,6 @@
       use ice_exit, only: abort_ice
       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted
       use icepack_intfc, only: icepack_ice_strength, icepack_query_parameters
-#ifdef CICE_IN_NEMO
-      use icepack_intfc, only: calc_strair
-#endif
 
       implicit none
       private
