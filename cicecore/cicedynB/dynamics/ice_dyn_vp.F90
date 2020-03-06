@@ -115,7 +115,7 @@
          this_block           ! block information for current block
          
       real (kind=dbl_kind) :: &
-         puny_vp = 2e-09_dbl_kind      ! special puny value for computing tinyarea
+         min_strain_rate = 2e-09_dbl_kind      ! used for recomputing tinyarea
       
       ! Initialize variables shared with evp
       call init_evp(dt)
@@ -128,7 +128,7 @@
                indxuj(nx_block*ny_block, max_blocks))
       allocate(fld2(nx_block,ny_block,2,max_blocks))
       
-      ! Redefine tinyarea using a different puny value
+      ! Redefine tinyarea using min_strain_rate
       
       !$OMP PARALLEL DO PRIVATE(iblk,i,j,ilo,ihi,jlo,jhi,this_block)
       do iblk = 1, nblocks
@@ -140,7 +140,7 @@
 
          do j = jlo, jhi
          do i = ilo, ihi
-            tinyarea(i,j,iblk) = puny_vp*tarea(i,j,iblk)
+            tinyarea(i,j,iblk) = min_strain_rate*tarea(i,j,iblk)
          enddo
          enddo
       enddo                     ! iblk
