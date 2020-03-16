@@ -164,7 +164,7 @@ int main (int argc, char **argv)
   doto[lastdot] = '\0';
   strcpy (dotd, doto);
   strcat (doto, ".o ");
-  strcat (dotd, ".d ");
+  strcat (dotd, ".mod ");
 
   /*
   ** write the blah.o blah.d: blah.F (or .c or whatever) dependency to stdout 
@@ -328,7 +328,7 @@ int main (int argc, char **argv)
 		fputs (doto  , stdout);
 		fputs (": "  , stdout);
 		fputs (depnam, stdout);
-		fputs (".o"  , stdout);
+		fputs (".mod"  , stdout);
 		fputs ("\n"  , stdout);
 
 		goto read_next_line;  /* Dependency found: process next line */
