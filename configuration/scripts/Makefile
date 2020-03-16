@@ -136,8 +136,11 @@ $(EXEC): $(OBJS)
 .F.o:
 	$(FC) -c $(FFLAGS) $(FIXEDFLAGS) $(CPPDEFS) $(INCLDIR) $<
 
-.F90.o:
+%.o : %.F90
 	$(FC) -c $(FFLAGS) $(FREEFLAGS) $(CPPDEFS) $(MODDIR) $(INCLDIR) $<
+
+%.mod : %.o
+	@:
 
 clean:
 	$(RM) -f *.o *.d *.mod $(EXEC)
