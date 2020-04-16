@@ -668,6 +668,9 @@
          byfix    , & ! part of by that is constant during Picard
          umassdti     ! mass of U-cell/dte (kg/m^2 s)
 
+      type (ice_halo), intent(in) :: &
+         halo_info_mask !  ghost cell update info for masked halo
+
       real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks,4), intent(out) :: &
          zetaD        ! zetaD = 2zeta (viscous coeff)
 
@@ -679,9 +682,6 @@
          bvec     , & ! RHS vector for FGMRES
          sol      , & ! current approximate solution
          diagvec      ! diagonal of matrix A for preconditioners
-
-      type (ice_halo) :: &
-         halo_info_mask !  ghost cell update info for masked halo
 
       ! local variables
 
@@ -1115,7 +1115,7 @@
          cxp      , & ! 1.5*HTN - 0.5*HTN
          cym      , & ! 0.5*HTE - 1.5*HTE
          cxm      , & ! 0.5*HTN - 1.5*HTN
-         tinyarea     ! puny*tarea
+         tinyarea     ! min_strain_rate*tarea
          
       real (kind=dbl_kind), dimension(nx_block,ny_block,4), & 
          intent(out) :: &
@@ -3140,7 +3140,7 @@
          Cb    , & ! seabed stress coefficient
          umassdti  ! mass of U-cell/dte (kg/m^2 s)
 
-      type (ice_halo) :: &
+      type (ice_halo), intent(in) :: &
          halo_info_mask !  ghost cell update info for masked halo
 
       real (kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(inout) :: &
