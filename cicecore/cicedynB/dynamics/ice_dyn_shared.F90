@@ -86,7 +86,8 @@
          basalstress   ! if true, basal stress for landfast on
 
       real (kind=dbl_kind), public :: &
-         k1            ! 1st free parameter for landfast parameterization
+         k1        , & ! 1st free parameter for landfast parameterization
+         u0 = 5e-5_dbl_kind ! residual velocity for basal stress (m/s)
 
 !=======================================================================
 
@@ -681,9 +682,6 @@
          Cb                , & ! complete basal stress coeff
          rhow                  !
 
-      real (kind=dbl_kind) :: &
-         u0 = 5e-5_dbl_kind    ! residual velocity for basal stress (m/s)
-         
       character(len=*), parameter :: subname = '(stepu)'
 
       !-----------------------------------------------------------------
