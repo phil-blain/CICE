@@ -744,7 +744,6 @@
          res_diff   , & ! difference between current and previous residuals
          fpfunc     , & ! current value of fixed point function
          fpfunc_old , & ! previous value of fixed point function
-         rhs_tri    , & ! rhs for matrix-vector product !phb shpuld be smaller (im_andacc?)
          tmp            ! temporary vector for BLAS calls
       
       real (kind=dbl_kind), dimension(ntot,im_andacc) :: &
@@ -755,6 +754,7 @@
          R            ! R factor for QR factorization of F (residuals) matrix
       
       real (kind=dbl_kind), dimension(im_andacc) :: &
+         rhs_tri  , & ! right hand side vector for matrix-vector product
          coeffs       ! coeffs used to combine previous solutions
 
       real (kind=dbl_kind) :: & 
