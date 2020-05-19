@@ -1040,7 +1040,7 @@
             endif
 #else
             ! Anderson solver is not usable without LAPACK; abort
-            call abort_ice(error_message=subname // "CICE was not compiled with LAPACK, and Anderson solver was chosen (im_andacc /= 0)" , &
+            call abort_ice(error_message=subname // " CICE was not compiled with LAPACK, and Anderson solver was chosen (algo_nonlin = 2)" , &
                file=__FILE__, line=__LINE__)
 #endif
          endif
