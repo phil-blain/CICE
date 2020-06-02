@@ -29,7 +29,7 @@ cat >> ${jobfile} << EOFR
 EOFR
 else
 cat >> ${jobfile} << EOFR
-mpiexec_mpt -n ${ntasks} ./cice >&! \$ICE_RUNLOG_FILE
+mpiexec_mpt -np ${ntasks} omplace ./cice >&! \$ICE_RUNLOG_FILE
 EOFR
 endif
 
@@ -106,6 +106,17 @@ EOFR
 endif
 
 #=======
+else if (${ICE_MACHINE} =~ loft*) then
+if (${ICE_COMMDIR} =~ serial*) then
+cat >> ${jobfile} << EOFR
+./cice >&! \$ICE_RUNLOG_FILE
+EOFR
+else
+cat >> ${jobfile} << EOFR
+aprun -n ${ntasks} -N ${taskpernodelimit} -d ${nthrds} ./cice >&! \$ICE_RUNLOG_FILE
+EOFR
+endif
+#=======
 else if (${ICE_MACHINE} =~ fram*) then
 if (${ICE_COMMDIR} =~ serial*) then
 cat >> ${jobfile} << EOFR
@@ -142,7 +153,7 @@ EOFR
 endif
 
 #=======
-else if (${ICE_MACHINE} =~ brooks*) then
+else if (${ICE_MACHINE} =~ daley* || ${ICE_MACHINE} =~ banting*) then
 if (${ICE_COMMDIR} =~ serial*) then
 cat >> ${jobfile} << EOFR
 ./cice >&! \$ICE_RUNLOG_FILE

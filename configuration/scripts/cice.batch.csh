@@ -145,6 +145,18 @@ cat >> ${jobfile} << EOFB
 #SBATCH --qos=standby
 EOFB
 
+else if (${ICE_MACHINE} =~ loft*) then
+cat >> ${jobfile} << EOFB
+#PBS -N ${shortcase}
+#PBS -q ${queue}
+#PBS -A ${acct}
+#PBS -l select=${nnodes}:ncpus=${maxtpn}:mpiprocs=${taskpernode}
+#PBS -l walltime=${batchtime}
+#PBS -j oe
+###PBS -M username@domain.com
+###PBS -m be
+EOFB
+
 else if (${ICE_MACHINE} =~ fram*) then
 cat >> ${jobfile} << EOFB
 #SBATCH -J ${ICE_CASENAME}
@@ -184,7 +196,7 @@ cat >> ${jobfile} << EOFB
 #SBATCH --qos=standby
 EOFB
 
-else if (${ICE_MACHINE} =~ brooks*) then
+else if (${ICE_MACHINE} =~ daley* || ${ICE_MACHINE} =~ banting*) then
 cat >> ${jobfile} << EOFB
 #PBS -N ${ICE_CASENAME}
 #PBS -j oe
