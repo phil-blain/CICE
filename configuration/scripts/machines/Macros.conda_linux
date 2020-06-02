@@ -40,7 +40,7 @@ LD:= $(FC)
 MODDIR  += -I$(CONDA_PREFIX)/include
 
 # Libraries to be passed to the linker
-SLIBS   := -lnetcdf -lnetcdff
+SLIBS   := -lnetcdf -lnetcdff -llapack
 
 # Necessary flag to compile with OpenMP support
 ifeq ($(ICE_THREADED), true)
