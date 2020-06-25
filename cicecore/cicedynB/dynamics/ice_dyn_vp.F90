@@ -1135,8 +1135,14 @@
 
       character(len=*), parameter :: subname = '(calc_zeta_Pr)'
 
+      ! Initialize
+
       capping = .false.
       
+      ! Initialize stPr and zetaD to zero (for cells where icetmask is false)
+      stPr  = c0
+      zetaD = c0
+
 !DIR$ CONCURRENT !Cray
 !cdir nodep      !NEC
 !ocl novrec      !Fujitsu
