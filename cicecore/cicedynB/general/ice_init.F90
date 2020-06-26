@@ -118,7 +118,7 @@
         ahmax, R_ice, R_pnd, R_snw, dT_mlt, rsnw_mlt, emissivity, &
         mu_rdg, hs0, dpscale, rfracmin, rfracmax, pndaspect, hs1, hp1, &
         a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, dSdt_slow_mode, &
-        phi_c_slow_mode, phi_i_mushy, kalg
+        phi_c_slow_mode, phi_i_mushy, kalg, Pstar, Cstar
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, natmiter, &
         kitd, kcatbound
@@ -191,7 +191,7 @@
         monitor_fgmres, monitor_pgmres, reltol_nonlin,  reltol_fgmres,  &
         reltol_pgmres,  algo_nonlin,    im_andacc,      reltol_andacc,  &
         damping_andacc, start_andacc,   fpfunc_andacc,  use_mean_vrel,  &
-        ortho_type
+        ortho_type,     Pstar,          Cstar
 
       namelist /shortwave_nml/ &
         shortwave,      albedo_type,                                    &
@@ -295,6 +295,8 @@
       revised_evp = .false.  ! if true, use revised procedure for evp dynamics
       yield_curve = 'ellipse'
       kstrength = 1          ! 1 = Rothrock 75 strength, 0 = Hibler 79
+      Pstar = 2.75e4_dbl_kind ! constant in Hibler strength formula (kstrength = 0)
+      Cstar = 20._dbl_kind    ! constant in Hibler strength formula (kstrength = 0)
       krdg_partic = 1        ! 1 = new participation, 0 = Thorndike et al 75
       krdg_redist = 1        ! 1 = new redistribution, 0 = Hibler 80
       mu_rdg = 3             ! e-folding scale of ridged ice, krdg_partic=1 (m^0.5)
@@ -581,6 +583,8 @@
       call broadcast_scalar(krdg_partic,        master_task)
       call broadcast_scalar(krdg_redist,        master_task)
       call broadcast_scalar(mu_rdg,             master_task)
+      call broadcast_scalar(Pstar,              master_task)
+      call broadcast_scalar(Cstar,              master_task)
       call broadcast_scalar(Cf,                 master_task)
       call broadcast_scalar(basalstress,        master_task)
       call broadcast_scalar(k1,                 master_task)
@@ -1093,6 +1097,8 @@
          write(nu_diag,1000) ' mu_rdg                    = ', mu_rdg
          if (kstrength == 1) &
          write(nu_diag,1000) ' Cf                        = ', Cf
+         write(nu_diag,1009) ' Pstar                     = ', Pstar
+         write(nu_diag,1005) ' Cstar                     = ', Cstar
          write(nu_diag,1010) ' basalstress               = ', basalstress
          write(nu_diag,1005) ' k1                        = ', k1
          write(nu_diag,1005) ' Ktens                     = ', Ktens
@@ -1327,7 +1333,8 @@
          a_rapid_mode_in=a_rapid_mode, Rac_rapid_mode_in=Rac_rapid_mode, &
          aspect_rapid_mode_in=aspect_rapid_mode, dSdt_slow_mode_in=dSdt_slow_mode, &
          phi_c_slow_mode_in=phi_c_slow_mode, phi_i_mushy_in=phi_i_mushy, &
-         tfrz_option_in=tfrz_option, kalg_in=kalg, fbot_xfer_type_in=fbot_xfer_type)
+         tfrz_option_in=tfrz_option, kalg_in=kalg, fbot_xfer_type_in=fbot_xfer_type, &
+         Pstar_in=Pstar, Cstar_in=Cstar)
       call icepack_init_tracer_flags(tr_iage_in=tr_iage, tr_FY_in=tr_FY, &
          tr_lvl_in=tr_lvl, tr_aero_in=tr_aero, tr_pond_in=tr_pond, &
          tr_pond_cesm_in=tr_pond_cesm, tr_pond_lvl_in=tr_pond_lvl, tr_pond_topo_in=tr_pond_topo)
@@ -1335,6 +1342,7 @@
  1000    format (a30,2x,f9.2)  ! a30 to align formatted, unformatted statements
  1005    format (a30,2x,f12.6)  ! float
  1008    format (a30,2x,d13.6)  ! float, exponential notation
+ 1009    format (a20,2x,d13.6,a)  ! float, exponential notation
  1010    format (a30,2x,l6)    ! logical
  1020    format (a30,2x,i6)    ! integer
  1021    format (a30,2x,a8,i6) ! char, int
