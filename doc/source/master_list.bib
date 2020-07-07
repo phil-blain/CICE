@@ -59,6 +59,8 @@
 @string{CRST = {Cold Reg. Sci. Technol.}}
 @string{IJHPCA={Int. J High Perform. Comput. Appl}}
 @string{PTRSA={Philos. Trans. Royal Soc. A}}
+@string{SIAMJCP={SIAM J. Sci. Comput.}}
+
 
 
 %  **********************************************
@@ -937,6 +939,32 @@
   pages = {79-139},
   url = {http://dx.doi.org/10.1016/j.ocemod.2018.07.002}
 }
+@Article{Lemieux07,
+  author = "J.-F. Lemieux and B. Tremblay and S. Thomas and J. Sedláček and L. A. Mysak",
+  title = "{Using the preconditioned Generalized Minimum RESidual (GMRES) method to solve the sea-ice momentum equation}",
+  journal = JGRO,
+  volume = {113},
+  number = {C10},
+  pages = {},
+  keywords = {Sea ice, GMRES, Krylov subspace},
+  doi = {10.1029/2007JC004680},
+  url = {https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2007JC004680},
+  eprint = {https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2007JC004680},
+  abstract = {We introduce the preconditioned generalized minimum residual (GMRES) method, along with an outer loop (OL) iteration to solve the sea-ice momentum equation. The preconditioned GMRES method is the linear solver. GMRES together with the OL is used to solve the nonlinear momentum equation. The GMRES method has low storage requirements, and it is computationally efficient and parallelizable. It was found that the preconditioned GMRES method is about 16 times faster than a stand-alone successive overrelaxation (SOR) solver and three times faster than a stand-alone line SOR (LSOR). Unlike stand-alone SOR and stand-alone LSOR, the cpu time needed by the preconditioned GMRES method for convergence weakly depends on the relaxation parameter when it is smaller than the optimal value. Results also show that with a 6-hour time step, the free drift velocity field is a better initial guess than the previous time step solution. For GMRES, the symmetry of the system matrix is not a prerequisite. The Coriolis term and the off-diagonal part of the water drag term can then be treated implicitly. The implicit treatment eliminates an instability characterized by a residual oscillation in the total kinetic energy of the ice pack that can be present when these off-diagonal terms are handled explicitly. Treating these terms explicitly prevents one from obtaining a high-accuracy solution of the sea-ice momentum equation unless a corrector step is applied. In fact, even after a large number of OL iterations, errors in the drift of the same magnitude as the drift itself can be present when these terms are treated explicitly.},
+  year = {2008}
+}
+@Article{Saad93,
+  author = "Y. Saad",
+  title = "{A Flexible Inner-Outer Preconditioned GMRES Algorithm}",
+  journal = SIAMJCP,
+  volume = {14},
+  number = {2},
+  year = {1993},
+  pages = {461-469},
+  doi = {10.1137/0914028},
+  URL = {https://doi.org/10.1137/0914028}
+}
+
 %  **********************************************
 %  For new entries, see example entry in BIB_TEMPLATE.txt
 %  **********************************************

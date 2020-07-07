@@ -250,7 +250,7 @@ Table of namelist options
    "","", "``0``", "dynamics OFF", ""
    "","", "``1``", "EVP dynamics", ""
    "","", "``2``", "EAP dynamics", ""
-   "","", "``1``", "dynamics ON", ""
+   "","", "``3``", "VP dynamics", ""
    "","``revised_evp``", "true/false", "use revised EVP formulation", ""
    "","``ndte``", "integer", "number of EVP subcycles", "240"
    "","``advection``", "``remap``", "linear remapping advection", "‘remap’"

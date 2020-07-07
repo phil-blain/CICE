@@ -5,15 +5,18 @@
 Dynamics
 ========
 
-There are now different rheologies available in the CICE code. The
+There are now different dynamical solvers available in the CICE code. The
 elastic-viscous-plastic (EVP) model represents a modification of the
 standard viscous-plastic (VP) model for sea ice dynamics
 :cite:`Hibler79`. The elastic-anisotropic-plastic (EAP) model,
 on the other hand, explicitly accounts for the observed sub-continuum
 anisotropy of the sea ice cover :cite:`Wilchinsky06,Weiss09`. If
-`kdyn` = 1 in the namelist then the EVP rheology is used (module
-**ice\_dyn\_evp.F90**), while `kdyn` = 2 is associated with the EAP
-rheology (**ice\_dyn\_eap.F90**). At times scales associated with the
+``kdyn`` = 1 in the namelist then the EVP model is used (module
+**ice\_dyn\_evp.F90**), while ``kdyn`` = 2 is associated with the EAP
+model (**ice\_dyn\_eap.F90**), and ``kdyn`` = 3 is associated with the 
+VP model (**ice\_dyn\_vp.F90**).
+
+At times scales associated with the
 wind forcing, the EVP model reduces to the VP model while the EAP model
 reduces to the anisotropic rheology described in detail in
 :cite:`Wilchinsky06,Tsamados13`. At shorter time scales the
@@ -29,13 +32,20 @@ dynamics in :cite:`Tsamados13`. Simulation results and
 performance of the EVP and EAP models have been compared with the VP
 model and with each other in realistic simulations of the Arctic
 respectively in :cite:`Hunke99` and
-:cite:`Tsamados13`. Here we summarize the equations and
-direct the reader to the above references for details. The numerical
+:cite:`Tsamados13`. 
+
+The EVP numerical
 implementation in this code release is that of :cite:`Hunke02`
 and :cite:`Hunke03`, with revisions to the numerical solver as
 in :cite:`Bouillon13`. The implementation of the EAP sea ice
 dynamics into CICE is described in detail in
 :cite:`Tsamados13`.
+
+The VP solver implementation mostly follows :cite:`Lemieux07`, with
+FGMRES :cite:`Saad93` as the linear solver and GMRES as the preconditioner.
+
+Here we summarize the equations and
+direct the reader to the above references for details.
 
 .. _momentum:
 
@@ -67,8 +77,7 @@ concentration regions. A careful explanation of the issue and its
 continuum solution is provided in :cite:`Hunke03` and
 :cite:`Connolley04`.
 
-The momentum equation is discretized in time as follows, for the classic
-EVP approach. First, for clarity, the two components of Equation :eq:`vpmom` are
+For clarity, the two components of Equation :eq:`vpmom` are
 
 .. math::
    \begin{aligned}
@@ -80,6 +89,21 @@ EVP approach. First, for clarity, the two components of Equation :eq:`vpmom` are
      a_i c_w \rho_w
      \left|{\bf U}_w - {\bf u}\right| \left[\left(U_w-u\right)\sin\theta + \left(V_w-v\right)\cos\theta\right]
      -C_bv-mfu - mg{\partial H_\circ\over\partial y}. \end{aligned}
+   :label: momsys
+
+
+A bilinear discretization is used for the stress terms
+:math:`\partial\sigma_{ij}/\partial x_j`,
+which enables the discrete equations to be derived from the
+continuous equations written in curvilinear coordinates. In this
+manner, metric terms associated with the curvature of the grid are
+incorporated into the discretization explicitly. Details pertaining to
+the spatial discretization are found in :cite:`Hunke02`.
+
+.. _evp-momentum:
+
+Elastic-Viscous-Plastic
+~~~~~~~~~~~~~~~~~~~~~~~
 
 In the code,
 :math:`{\tt vrel}=a_i c_w \rho_w\left|{\bf U}_w - {\bf u}^k\right|` and 
@@ -104,7 +128,7 @@ variables used in the code.
      + {\tt vrel}\underbrace{\left(U_w\sin\theta+V_w\cos\theta\right)}_{\tt watery}  + {m\over\Delta t_e}v^k,
    :label: vmom
 
-and vrel\ :math:`\cdot`\ waterx(y) = taux(y).
+and :math:`{\tt vrel}\ \cdot\ {\tt waterx(y)}= {\tt taux(y)}`.
 
 We solve this system of equations analytically for :math:`u^{k+1}` and
 :math:`v^{k+1}`. Define
@@ -140,10 +164,55 @@ where
 .. math::
    b = mf + {\tt vrel}\sin\theta.
    :label: cevpb
+   
+.. _vp-momentum:
 
-When the subcycling is finished for each (thermodynamic) time step, the
-ice–ocean stress must be constructed from `taux(y)` and the terms
-containing `vrel` on the left hand side of the equations.
+Viscous-Plastic
+~~~~~~~~~~~~~~~
+
+In the VP approach, equation :eq:`momsys` is discretized implicitly using a Backward Euler approach,
+and stresses are not computed explicitly:
+
+.. math::
+  \begin{align}
+  m\frac{(u^{n}-u^{n-1})}{\Delta t} &= \frac{\partial \sigma_{1j}^n}{\partial x_j} 
+  - \tau_{w,x}^n + \tau_{b,x}^n +  mfv^n
+   + r_{x}^n,
+  \\
+  m\frac{(v^{n}-v^{n-1})}{\Delta t} &= \frac{\partial \sigma^{n} _{2j}}{\partial x_j }  
+  - \tau_{w,y}^n + \tau_{b,y}^n   -mfu^{n}
+   + r_{y}^n
+  \end{align}
+  :label: u_sit
+
+where :math:`r = (r_x,r_y)` contains all terms that do not depend on the velocities :math:`u^n, v^n` (namely the sea surface tilt and the wind stress). 
+As the water drag, seabed stress and rheology term depend on the velocity field, the only unknowns in equation :eq:`u_sit` are :math:`u^n` and :math:`v^n`.
+
+Once discretized in space, equation :eq:`u_sit` leads to a system of :math:`N` nonlinear equations with :math:`N` unknowns that can be concisely written as
+
+.. math::
+  \mathbf{A}(\mathbf{u})\mathbf{u} = \mathbf{b}(\mathbf{u}),
+  :label: nonlin_sys
+
+where :math:`\mathbf{A}` is an :math:`N\times N` matrix and :math:`\mathbf{u}` and :math:`\mathbf{b}` are vectors of size :math:`N`. Note that we have dropped the time level index :math:`n`. 
+The vector :math:`\mathbf{u}` is formed by stacking first the :math:`u` components, followed by the :math:`v` components of the discretized ice velocity. 
+The vector :math:`\mathbf{b}` is a function of the velocity vector :math:`\mathbf{u}` because of the water and seabed stress terms as well as parts of the rheology term that depend non-linearly on :math:`\mathbf{u}`.
+
+The nonlinear system :eq:`nonlin_sys` is solved using a Picard iteration method.
+Starting from a previous iterate :math:`\mathbf{u}_{k-1}`, the nonlinear system is linearized by substituting :math:`\mathbf{u}_{k-1}` in the expression of the matrix :math:`\mathbf{A}` and the vector :math:`\mathbf{b}`: 
+
+.. math::
+  \mathbf{A}(\mathbf{u}_{k-1})\mathbf{u}_{k} =  \mathbf{b}(\mathbf{u}_{k-1})
+  :label: picard
+
+The resulting linear system is solved using the Flexible Generalized Minimum RESidual (FGMRES, :cite:`Saad93`) method and this process is repeated iteratively.
+
+Ice-Ocean stress
+~~~~~~~~~~~~~~~~
+
+At the end of each (thermodynamic) time step, the
+ice–ocean stress must be constructed from :math:`{\tt taux(y)}` and the terms
+containing :math:`{\tt vrel}` on the left hand side of the equations.
 
 The Hibler-Bryan form for the ice-ocean stress :cite:`Hibler87`
 is included in **ice\_dyn\_shared.F90** but is currently commented out,
@@ -185,7 +254,7 @@ where the :math:`a_i` and :math:`v_i` are the total ice concentrations and ice v
 ridge(s) reaches the seafloor for a water depth :math:`h_{wu}=\min[h_w(i,j),h_w(i+1,j),h_w(i,j+1),h_w(i+1,j+1)]`. Given the formulation of :math:`C_b` in equation :eq:`Cb`, the seabed stress components are non-zero only 
 when :math:`h_u > h_{cu}`. 
 
-The maximum seabed stress depends on the weigth of the ridge 
+The maximum seabed stress depends on the weight of the ridge 
 above hydrostatic balance and the value of :math:`k_2`. It is, however, the parameter :math:`k_1` that has the most notable impact on the simulated extent of landfast ice. 
 The value of :math:`k_1` can be changed at runtime using the namelist variable ``k1``. The grounding scheme can be turned on or off using the namelist logical basalstress. 
 
@@ -207,19 +276,71 @@ For convenience we formulate the stress tensor :math:`\bf \sigma` in
 terms of :math:`\sigma_1=\sigma_{11}+\sigma_{22}`,
 :math:`\sigma_2=\sigma_{11}-\sigma_{22}`, and introduce the
 divergence, :math:`D_D`, and the horizontal tension and shearing
-strain rates, :math:`D_T` and :math:`D_S` respectively.
+strain rates, :math:`D_T` and :math:`D_S` respectively:
 
-CICE now outputs the internal ice pressure which is an important field to support navigation in ice-infested water.
-The internal ice pressure :math:`(sigP)` is the average of the normal stresses multiplied by :math:`-1` and 
+.. math::
+   D_D = \dot{\epsilon}_{11} + \dot{\epsilon}_{22}, 
+
+.. math::
+   D_T = \dot{\epsilon}_{11} - \dot{\epsilon}_{22}, 
+
+.. math::
+   D_S = 2\dot{\epsilon}_{12}, 
+
+where
+
+.. math::
+   \dot{\epsilon}_{ij} = {1\over 2}\left({{\partial u_i}\over{\partial x_j}} + {{\partial u_j}\over{\partial x_i}}\right)
+
+CICE can output the internal ice pressure which is an important field to support navigation in ice-infested water.
+The internal ice pressure (``sigP``) is the average of the normal stresses multiplied by :math:`-1` and 
 is therefore simply equal to :math:`-\sigma_1/2`.
 
-*Elastic-Viscous-Plastic*
-
-In the EVP model the internal stress tensor is determined from a
-regularized version of the VP constitutive law. Following the approach of :cite:`Konig10` (see also :cite:`Lemieux16`), the 
+Following the approach of :cite:`Konig10` (see also :cite:`Lemieux16`), the 
 elliptical yield curve can be modified such that the ice has isotropic tensile strength. 
 The tensile strength :math:`T_p` is expressed as a fraction of the ice strength :math:`P`, that is :math:`T_p=k_t P` 
-where :math:`k_t` should be set to a value between 0 and 1 (this can be changed at runtime with the namelist parameter ``Ktens``). The constitutive law is therefore 
+where :math:`k_t` should be set to a value between 0 and 1 (this can be changed at runtime with the namelist parameter ``Ktens``).
+
+.. _stress-vp:
+
+Viscous-Plastic
+~~~~~~~~~~~~~~~
+
+The VP constitutive law is given by
+
+.. math::
+   \sigma_{ij} = 2 \eta \dot{\epsilon}_{ij} + (\zeta - \eta) D_D - P_R(1 - k_t)\frac{\delta_{ij}}{2}
+   :label: vp-const
+
+where :math:`\eta` and :math:`\zeta` are the bulk and shear viscosities. 
+An elliptical yield curve is used, with the viscosities given by
+
+.. math::
+   \zeta = {P(1+k_t)\over 2\Delta}, 
+
+.. math::
+   \eta  = {P(1+k_t)\over {2\Delta e^2}}, 
+
+where 
+
+.. math::
+   \Delta = \left[D_D^2 + {1\over e^2}\left(D_T^2 + D_S^2\right)\right]^{1/2}
+
+and :math:`P_R` is a “replacement pressure” (see :cite:`Geiger98`, for
+example), which serves to prevent residual ice motion due to spatial
+variations of :math:`P` when the rates of strain are exactly zero.
+
+The ice strength :math:`P` 
+is a function of the ice thickness and concentration
+as described in the `Icepack Documentation <https://cice-consortium-icepack.readthedocs.io/en/master/science_guide/index.html>`_. The parameter :math:`e` is the  ratio of the major and minor axes of the elliptical yield curve, also called the ellipse aspect ratio. It can be changed using the namelist parameter ``e_ratio``.
+
+.. _stress-evp:
+
+Elastic-Viscous-Plastic
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In the EVP model the internal stress tensor is determined from a
+regularized version of the VP constitutive law :eq:`vp-const`.  The constitutive law is therefore 
 
 .. math::
    {1\over E}{\partial\sigma_1\over\partial t} + {\sigma_1\over 2\zeta} 
@@ -235,34 +356,6 @@ where :math:`k_t` should be set to a value between 0 and 1 (this can be changed 
      2\eta} = {1\over 2}D_S,
    :label: sig12
 
-where
-
-.. math::
-   D_D = \dot{\epsilon}_{11} + \dot{\epsilon}_{22}, 
-
-.. math::
-   D_T = \dot{\epsilon}_{11} - \dot{\epsilon}_{22}, 
-
-.. math::
-   D_S = 2\dot{\epsilon}_{12}, 
-
-.. math::
-   \dot{\epsilon}_{ij} = {1\over 2}\left({{\partial u_i}\over{\partial x_j}} + {{\partial u_j}\over{\partial x_i}}\right), 
-
-.. math::
-   \zeta = {P(1+k_t)\over 2\Delta}, 
-
-.. math::
-   \eta  = {P(1+k_t)\over {2\Delta e^2}}, 
-
-.. math::
-   \Delta = \left[D_D^2 + {1\over e^2}\left(D_T^2 + D_S^2\right)\right]^{1/2},
-
-and :math:`P_R` is a “replacement pressure” (see :cite:`Geiger98`, for
-example), which serves to prevent residual ice motion due to spatial
-variations of :math:`P` when the rates of strain are exactly zero. The ice strength :math:`P` 
-is a function of the ice thickness and concentration
-as it is described in the `Icepack Documentation <https://cice-consortium-icepack.readthedocs.io/en/master/science_guide/index.html>`_. The parameteter :math:`e` is the  ratio of the major and minor axes of the elliptical yield curve, also called the ellipse aspect ratio. It can be changed using the namelist parameter ``e_ratio``.
 
 Viscosities are updated during the subcycling, so that the entire
 dynamics component is subcycled within the time step, and the elastic
@@ -304,15 +397,10 @@ appear explicitly.) Choices of the parameters used to define :math:`E`,
 :math:`T` and :math:`\Delta t_e` are discussed in
 Sections :ref:`revp` and :ref:`parameters`.
 
-The bilinear discretization used for the stress terms
-:math:`\partial\sigma_{ij}/\partial x_j` in the momentum equation is
-now used, which enabled the discrete equations to be derived from the
-continuous equations written in curvilinear coordinates. In this
-manner, metric terms associated with the curvature of the grid are
-incorporated into the discretization explicitly. Details pertaining to
-the spatial discretization are found in :cite:`Hunke02`.
+.. _stress-eap:
 
-*Elastic-Anisotropic-Plastic*
+Elastic-Anisotropic-Plastic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the EAP model the internal stress tensor is related to the
 geometrical properties and orientation of underlying virtual diamond
@@ -558,6 +646,6 @@ Introducing another numerical parameter :math:`\alpha=2T \Delta t_e ^{-1}` :cite
 where as opposed to the classic EVP, the second term in each equation is at iteration :math:`k` :cite:`Bouillon13`. Also, as opposed to the classic EVP, 
 :math:`\Delta t_e` times the number of subcycles (or iterations) does not need to be equal to the advective time step :math:`\Delta t`. 
 Finally, as with the classic EVP approach, the stresses are initialized using the previous time level values. 
-The revised EVP is activated by setting the namelist parameter `revised\_evp` = true. 
-In the code :math:`\alpha = arlx` and :math:`\beta = brlx`. The values of :math:`arlx` and :math:`brlx` can be set in the namelist. 
-It is recommended to use large values of these parameters and to set :math:`arlx=brlx` :cite:`Kimmritz15`.
+The revised EVP is activated by setting the namelist parameter ``revised_evp = true``. 
+In the code :math:`\alpha` is ``arlx`` and :math:`\beta` is ``brlx``. The values of ``arlx`` and ``brlx`` can be set in the namelist. 
+It is recommended to use large values of these parameters and to set :math:`\alpha=\beta` :cite:`Kimmritz15`.
