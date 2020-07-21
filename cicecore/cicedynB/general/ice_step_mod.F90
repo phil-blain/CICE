@@ -833,7 +833,7 @@
 
       use ice_dyn_evp, only: evp
       use ice_dyn_eap, only: eap
-      use ice_dyn_vp, only: imp_solver
+      use ice_dyn_vp, only: implicit_solver
       use ice_dyn_shared, only: kdyn, ktransport
       use ice_flux, only: init_history_dyn
       use ice_transport_driver, only: advection, transport_upwind, transport_remap
@@ -851,7 +851,7 @@
 
       if (kdyn == 1) call evp (dt)
       if (kdyn == 2) call eap (dt)
-      if (kdyn == 3) call imp_solver (dt)
+      if (kdyn == 3) call implicit_solver (dt)
 
       !-----------------------------------------------------------------
       ! Horizontal ice transport
