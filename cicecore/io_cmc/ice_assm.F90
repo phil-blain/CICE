@@ -1,5 +1,5 @@
 MODULE ice_assm
-#ifdef CMCform
+#ifdef key_rpne
    !!======================================================================
    !!                       ***  MODULE  ice_assm  ***
    !! Ice Assimilatio:  performs ice direct insertion of data
