@@ -279,6 +279,7 @@
 
       else   ! rectangular grid
 
+         print *, 'Info about grid', nx_global, ny_global
          work_g1(:,:) = 75._dbl_kind/rad_to_deg  ! arbitrary polar latitude
          work_g2(:,:) = c1
 

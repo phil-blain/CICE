@@ -5100,6 +5100,7 @@
 ! wind and current fields as in Hunke, JCP 2001
 ! authors: Elizabeth Hunke, LANL
 
+      use ice_calendar, only: istep, dt
       use ice_domain, only: nblocks
       use ice_blocks, only: nx_block, ny_block, nghost
       use ice_flux, only: uocn, vocn, uatm, vatm, wind, rhoa, strax, stray
@@ -5116,7 +5117,7 @@
       call icepack_query_parameters(secday_out=secday)
 
       period = c4*secday
-
+      print *, 'Prescribing winds and ocean currents', istep, dt
       do iblk = 1, nblocks
          do j = 1, ny_block   
          do i = 1, nx_block   

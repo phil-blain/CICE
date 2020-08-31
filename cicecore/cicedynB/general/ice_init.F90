@@ -2147,7 +2147,7 @@
          edge_init_nh =  70._dbl_kind, & ! initial ice edge, N.Hem. (deg) 
          edge_init_sh = -60._dbl_kind    ! initial ice edge, S.Hem. (deg)
 
-      logical (kind=log_kind) :: tr_brine, tr_lvl
+      logical (kind=log_kind) :: tr_brine, tr_lvl, EXPjfl
       integer (kind=int_kind) :: ntrcr
       integer (kind=int_kind) :: nt_Tsfc, nt_qice, nt_qsno, nt_sice
       integer (kind=int_kind) :: nt_fbri, nt_alvl, nt_vlvl
@@ -2155,6 +2155,7 @@
       character(len=*), parameter :: subname='(set_state_var)'
 
       !-----------------------------------------------------------------
+      EXPjfl = .true. ! for special exp for Melhmann et al paper
 
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
       call icepack_query_tracer_flags(tr_brine_out=tr_brine, tr_lvl_out=tr_lvl)
@@ -2209,15 +2210,27 @@
 
          if (trim(ice_data_type) == 'box2001') then
 
-            hbar = c2  ! initial ice thickness
-            do n = 1, ncat
-               hinit(n) = c0
-               ainit(n) = c0
-               if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
-                  hinit(n) = hbar
-                  ainit(n) = p5 !echmod symm
-               endif
-            enddo
+            if (EXPjfl) then ! 1d vectors (n)...not on grid yet
+               hbar = c2  ! initial ice thickness                                            
+               do n = 1, ncat
+                  hinit(n) = c0
+                  ainit(n) = c0
+                  if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
+                     hinit(n) = hbar
+                     ainit(n) = c1 !echmod symm 
+                  endif
+               enddo
+            else
+               hbar = c2  ! initial ice thickness
+               do n = 1, ncat
+                  hinit(n) = c0
+                  ainit(n) = c0
+                  if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
+                     hinit(n) = hbar
+                     ainit(n) = p5 !echmod symm
+                  endif
+               enddo
+            endif
 
          elseif (trim(ice_data_type) == 'boxslotcyl') then
          
@@ -2302,10 +2315,14 @@
                aicen(i,j,n) = ainit(n)
 
                if (trim(ice_data_type) == 'box2001') then
-                  if (hinit(n) > c0) then
+                  
+                  if (EXPjfl) then ! put on grid
+                   ! check here  
+                  else
+                     if (hinit(n) > c0) then
 !                  ! constant slope from 0 to 1 in x direction
-                     aicen(i,j,n) = (real(iglob(i), kind=dbl_kind)-p5) &
-                                  / (real(nx_global,kind=dbl_kind))
+                        aicen(i,j,n) = (real(iglob(i), kind=dbl_kind)-p5) &
+                             / (real(nx_global,kind=dbl_kind))
 !                  ! constant slope from 0 to 0.5 in x direction
 !                     aicen(i,j,n) = (real(iglob(i), kind=dbl_kind)-p5) &
 !                                  / (real(nx_global,kind=dbl_kind)) * p5
@@ -2320,6 +2337,7 @@
 !                                         * (real(ny_global, kind=dbl_kind) &
 !                                         -  real(jglob(j), kind=dbl_kind)-p5) &
 !                                         / (real(ny_global,kind=dbl_kind)) * p5)
+                     endif
                   endif
                   vicen(i,j,n) = hinit(n) * aicen(i,j,n) ! m
                elseif (trim(ice_data_type) == 'boxslotcyl') then
@@ -2334,7 +2352,12 @@
                else
                   vicen(i,j,n) = hinit(n) * ainit(n) ! m
                endif
-               vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+
+               if (EXPjfl) then 
+                  vsnon(i,j,n) = c0
+               else
+                  vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+               endif
 
                call icepack_init_trcr(Tair  = Tair(i,j), Tf = Tf(i,j),  &
                                       Sprofile = salinz(i,j,:),         &
@@ -2360,6 +2383,11 @@
             enddo               ! ij
          enddo                  ! ncat
          
+         ! check initalization jfl
+         do n = 1, ncat
+            print *, 'INIT', n, aicen(50,50,n), vicen(50,50,n)
+         enddo
+
          ! velocity initialization for special tests
          if (trim(ice_data_type) == 'boxslotcyl') then
             do j = 1, ny_block
