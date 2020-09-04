@@ -2075,7 +2075,7 @@
 
       use ice_arrays_column, only: hin_max
       use ice_domain_size, only: nilyr, nslyr, nx_global, ny_global, ncat
-      use ice_grid, only: grid_type
+      use ice_grid, only: grid_type, dxrect, dyrect
       use ice_forcing, only: ice_data_type
 
       integer (kind=int_kind), intent(in) :: &
@@ -2131,7 +2131,7 @@
          indxi, indxj    ! compressed indices for cells with aicen > puny
 
       real (kind=dbl_kind) :: &
-         Tsfc, sum, hbar, puny, rhos, Lfresh, rad_to_deg
+         Tsfc, sum, hbar, puny, rhos, Lfresh, rad_to_deg, distx, disty
 
       real (kind=dbl_kind), dimension(ncat) :: &
          ainit, hinit    ! initial area, thickness
@@ -2211,7 +2211,7 @@
          if (trim(ice_data_type) == 'box2001') then
 
             if (EXPjfl) then ! 1d vectors (n)...not on grid yet
-               hbar = c2  ! initial ice thickness                                            
+               hbar = 0.3d0  ! initial ice thickness                                            
                do n = 1, ncat
                   hinit(n) = c0
                   ainit(n) = c0
@@ -2317,7 +2317,9 @@
                if (trim(ice_data_type) == 'box2001') then
                   
                   if (EXPjfl) then ! put on grid
-                   ! check here  
+                   distx=i*dxrect
+                   disty=j*dyrect
+                   
                   else
                      if (hinit(n) > c0) then
 !                  ! constant slope from 0 to 1 in x direction

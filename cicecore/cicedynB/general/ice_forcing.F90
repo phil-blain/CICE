@@ -5108,41 +5108,56 @@
 
       ! local parameters
 
+      logical (kind=log_kind) :: EXPjfl
+      
       integer (kind=int_kind) :: &
          iblk, i,j           ! loop indices
 
       real (kind=dbl_kind) :: &
-          secday, pi , puny, period, pi2, tau
+          secday, pi , puny, period, pi2, tau, mx, my, mtime
       call icepack_query_parameters(pi_out=pi, pi2_out=pi2, puny_out=puny)
       call icepack_query_parameters(secday_out=secday)
 
+      EXPjfl = .false.
+      mtime = 4d0 + (istep*dt/secday)
+      mx = 50d0 + 50d0*mtime
+      my = 50d0 + 50d0*mtime
+
       period = c4*secday
       print *, 'Prescribing winds and ocean currents', istep, dt
+      print *, 'checking', mx, my
       do iblk = 1, nblocks
          do j = 1, ny_block   
          do i = 1, nx_block   
 
+         if (EXPjfl) then
+
+            uocn(i,j,iblk)=0d0
+            vocn(i,j,iblk)=0d0
+
+         else
          ! ocean current
          ! constant in time, could be initialized in ice_flux.F90
-         uocn(i,j,iblk) =  p2*real(j-nghost, kind=dbl_kind) &
-                            / real(nx_global,kind=dbl_kind) - p1
-         vocn(i,j,iblk) = -p2*real(i-nghost, kind=dbl_kind) &
-                            / real(ny_global,kind=dbl_kind) + p1
+            uocn(i,j,iblk) =  p2*real(j-nghost, kind=dbl_kind) &
+                 / real(nx_global,kind=dbl_kind) - p1
+            vocn(i,j,iblk) = -p2*real(i-nghost, kind=dbl_kind) &
+                 / real(ny_global,kind=dbl_kind) + p1
 
-         uocn(i,j,iblk) = uocn(i,j,iblk) * uvm(i,j,iblk)
-         vocn(i,j,iblk) = vocn(i,j,iblk) * uvm(i,j,iblk)
+            uocn(i,j,iblk) = uocn(i,j,iblk) * uvm(i,j,iblk)
+            vocn(i,j,iblk) = vocn(i,j,iblk) * uvm(i,j,iblk)
 
          ! wind components
-         uatm(i,j,iblk) = c5 + (sin(pi2*time/period)-c3) &
-                              * sin(pi2*real(i-nghost, kind=dbl_kind)  &
-                                       /real(nx_global,kind=dbl_kind)) &
-                              * sin(pi *real(j-nghost, kind=dbl_kind)  &
-                                       /real(ny_global,kind=dbl_kind))
-         vatm(i,j,iblk) = c5 + (sin(pi2*time/period)-c3) &
-                              * sin(pi *real(i-nghost, kind=dbl_kind)  &
-                                       /real(nx_global,kind=dbl_kind)) &
-                              * sin(pi2*real(j-nghost, kind=dbl_kind)  &
-                                       /real(ny_global,kind=dbl_kind))
+            uatm(i,j,iblk) = c5 + (sin(pi2*time/period)-c3) &
+                 * sin(pi2*real(i-nghost, kind=dbl_kind)  &
+                 /real(nx_global,kind=dbl_kind)) &
+                 * sin(pi *real(j-nghost, kind=dbl_kind)  &
+                 /real(ny_global,kind=dbl_kind))
+            vatm(i,j,iblk) = c5 + (sin(pi2*time/period)-c3) &
+                 * sin(pi *real(i-nghost, kind=dbl_kind)  &
+                 /real(nx_global,kind=dbl_kind)) &
+                 * sin(pi2*real(j-nghost, kind=dbl_kind)  &
+                 /real(ny_global,kind=dbl_kind))
+         endif
          ! wind stress
          wind(i,j,iblk) = sqrt(uatm(i,j,iblk)**2 + vatm(i,j,iblk)**2)
          tau = rhoa(i,j,iblk) * 0.0012_dbl_kind * wind(i,j,iblk)

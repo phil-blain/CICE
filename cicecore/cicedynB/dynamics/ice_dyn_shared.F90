@@ -315,6 +315,10 @@
       character(len=*), parameter :: subname = '(dyn_prep1)'
 
       call icepack_query_parameters(rhos_out=rhos, rhoi_out=rhoi)
+      if (rhoi .ne. 900.0) then
+         print *, 'WRONG rhoi ', rhoi
+         stop
+      endif
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
          file=__FILE__, line=__LINE__)
