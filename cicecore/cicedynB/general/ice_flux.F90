@@ -54,6 +54,7 @@
 
        ! out to ocean          T-cell (kg/m s^2)
        ! Note, CICE_IN_NEMO uses strocnx and strocny for coupling
+         dragiou , & ! effective used drag between ice and ocean times cosw
          strocnxT, & ! ice-ocean stress, x-direction
          strocnyT    ! ice-ocean stress, y-direction
 

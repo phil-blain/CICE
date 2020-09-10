@@ -769,7 +769,8 @@
                              strintx,  strinty,  &
                              strairx,  strairy,  &
                              strocnx,  strocny,  &
-                             strocnxT, strocnyT) 
+                             strocnxT, strocnyT, &
+                             dragiou)
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -796,6 +797,7 @@
          strocny     ! ice-ocean stress, y-direction
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(out) :: &
+         dragiou , & ! effective ice-ocean drag for implicit calculation
          strocnxT, & ! ice-ocean stress, x-direction
          strocnyT    ! ice-ocean stress, y-direction
 
@@ -819,6 +821,7 @@
       do i = 1, nx_block
          strocnxT(i,j) = c0
          strocnyT(i,j) = c0
+         dragiou(i,j)  = c0
       enddo
       enddo
 
@@ -851,6 +854,9 @@
          ! divide by aice for coupling
          strocnxT(i,j) = strocnx(i,j) / aiu(i,j)
          strocnyT(i,j) = strocny(i,j) / aiu(i,j)
+
+         ! compute the effective drag along cosw for use in NEMO
+         dragiou(i,j) = vrel * cosw
       enddo
 
       end subroutine dyn_finish
