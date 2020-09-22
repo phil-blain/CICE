@@ -58,4 +58,4 @@ fc=1.46e-4 OK
 P*=27.5 OK
 C=20 OK
 e=2 OK
-
+WATCHOUT Cdair is hard coded in box2001...but at right value (for the moment)

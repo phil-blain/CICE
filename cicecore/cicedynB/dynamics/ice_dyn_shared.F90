@@ -806,7 +806,7 @@
       integer (kind=int_kind) :: &
          i, j, ij
 
-      real (kind=dbl_kind) :: vrel, rhow
+      real (kind=dbl_kind) :: vrel, rhow, maxu, maxv
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(inout) :: &
          Cw                   ! ocean-ice neutral drag coefficient 
 
@@ -824,6 +824,8 @@
       enddo
       enddo
 
+      maxu=0d0
+      maxv=0d0
       ! ocean-ice stress for coupling
       do ij =1, icellu
          i = indxui(ij)
@@ -853,7 +855,11 @@
          ! divide by aice for coupling
          strocnxT(i,j) = strocnx(i,j) / aiu(i,j)
          strocnyT(i,j) = strocny(i,j) / aiu(i,j)
+         if (abs(uvel(i,j)) .gt. maxu) maxu = abs(uvel(i,j))
+         if (abs(vvel(i,j)) .gt. maxv) maxv = abs(vvel(i,j))
       enddo
+
+      print *, 'Max ice velo ', maxu, maxv
 
       end subroutine dyn_finish
 

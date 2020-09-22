@@ -2131,7 +2131,7 @@
          indxi, indxj    ! compressed indices for cells with aicen > puny
 
       real (kind=dbl_kind) :: &
-         Tsfc, sum, hbar, puny, rhos, Lfresh, rad_to_deg, distx, disty
+         Tsfc, sum, hbar, puny, rhos, Lfresh, rad_to_deg, xdist, ydist, hmean, htp
 
       real (kind=dbl_kind), dimension(ncat) :: &
          ainit, hinit    ! initial area, thickness
@@ -2156,6 +2156,11 @@
 
       !-----------------------------------------------------------------
       EXPjfl = .true. ! for special exp for Melhmann et al paper
+      hmean  = 0.3d0
+      if (EXPjfl .and. hmean .ne. 0.3d0) then
+         print *, 'currently put in first thick cat...verify this if hmean ne 0.3'
+         stop
+      endif
 
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
       call icepack_query_tracer_flags(tr_brine_out=tr_brine, tr_lvl_out=tr_lvl)
@@ -2211,13 +2216,15 @@
          if (trim(ice_data_type) == 'box2001') then
 
             if (EXPjfl) then ! 1d vectors (n)...not on grid yet
-               hbar = 0.3d0  ! initial ice thickness                                            
+               hbar = 0.3d0  ! initial ice thickness (temporary)                                           
                do n = 1, ncat
                   hinit(n) = c0
                   ainit(n) = c0
+                  print *, 'cat = ', hin_max(n)
                   if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
                      hinit(n) = hbar
                      ainit(n) = c1 !echmod symm 
+                     print *, 'cat is = ', n
                   endif
                enddo
             else
@@ -2317,8 +2324,17 @@
                if (trim(ice_data_type) == 'box2001') then
                   
                   if (EXPjfl) then ! put on grid
-                   distx=i*dxrect
-                   disty=j*dyrect
+                     vicen(i,j,n)=0d0
+                     aicen(i,j,n)=0d0
+                     if (n .eq. 1) then
+
+                        xdist=i*dxrect/1d05 ! in km
+                        ydist=j*dyrect/1d05 ! in km
+                        htp = hmean + 0.005d0*sin(6d0*xdist/100d0)+0.005d0*sin(3d0*ydist/100d0)
+                        aicen(i,j,n)=1d0
+                        vicen(i,j,n) = htp * aicen(i,j,n)
+
+                     endif
                    
                   else
                      if (hinit(n) > c0) then
@@ -2340,8 +2356,9 @@
 !                                         -  real(jglob(j), kind=dbl_kind)-p5) &
 !                                         / (real(ny_global,kind=dbl_kind)) * p5)
                      endif
+                     vicen(i,j,n) = hinit(n) * aicen(i,j,n) ! m 
                   endif
-                  vicen(i,j,n) = hinit(n) * aicen(i,j,n) ! m
+                 
                elseif (trim(ice_data_type) == 'boxslotcyl') then
                   if (hinit(n) > c0) then
                    ! slotted cylinder

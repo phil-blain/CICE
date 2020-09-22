@@ -5104,7 +5104,7 @@
       use ice_domain, only: nblocks
       use ice_blocks, only: nx_block, ny_block, nghost
       use ice_flux, only: uocn, vocn, uatm, vatm, wind, rhoa, strax, stray
-      use ice_grid, only: uvm
+      use ice_grid, only: uvm, dxrect, dyrect
 
       ! local parameters
 
@@ -5114,26 +5114,45 @@
          iblk, i,j           ! loop indices
 
       real (kind=dbl_kind) :: &
-          secday, pi , puny, period, pi2, tau, mx, my, mtime
+          secday, pi , puny, period, pi2, tau
+      ! Melhmann et al
+      real (kind=dbl_kind) :: mx, my, mtime, ms, mr, malpha, xdist, ydist, vmax
+      real (kind=dbl_kind) :: wx, wy, ws, wr, maxua, maxva, maxuo, maxvo
       call icepack_query_parameters(pi_out=pi, pi2_out=pi2, puny_out=puny)
       call icepack_query_parameters(secday_out=secday)
 
-      EXPjfl = .false.
+      EXPjfl = .true.
+      vmax = 15d0
       mtime = 4d0 + (istep*dt/secday)
       mx = 50d0 + 50d0*mtime
       my = 50d0 + 50d0*mtime
+      malpha = 0.5d0*pi - 0.5d0*pi/5d0
+      ws = tanh(mtime*(8d0-mtime)/2d0)
+      maxua=0d0
+      maxuo=0d0
 
       period = c4*secday
       print *, 'Prescribing winds and ocean currents', istep, dt
-      print *, 'checking', mx, my
       do iblk = 1, nblocks
          do j = 1, ny_block   
          do i = 1, nx_block   
 
          if (EXPjfl) then
-
-            uocn(i,j,iblk)=0d0
-            vocn(i,j,iblk)=0d0
+            
+            xdist=i*dxrect/1d05 ! in km
+            ydist=j*dyrect/1d05 ! in km
+            mr = sqrt( (mx-xdist)**2d0 + (my-ydist)**2d0 )
+            ms = (1d0/50d0)*exp(-0.01d0*mr)
+            wx = cos(malpha)*(xdist-mx) + sin(malpha)*(ydist-my)
+            wy = -sin(malpha)*(xdist-mx) + cos(malpha)*(ydist-my)
+            uatm(i,j,iblk) = -wx * vmax * ms * ws
+            vatm(i,j,iblk) = -wy * vmax * ms * ws
+            uocn(i,j,iblk) = 0.01d0 * (2d0*ydist - 500d0) / 500d0
+            vocn(i,j,iblk) = -0.01d0 * (2d0*ydist - 500d0) / 500d0
+            if (abs(uatm(i,j,iblk)) .gt. maxua) maxua = abs(uatm(i,j,iblk))
+            if (abs(vatm(i,j,iblk)) .gt. maxva) maxva = abs(vatm(i,j,iblk))
+            if (abs(uocn(i,j,iblk)) .gt. maxuo) maxuo = abs(uocn(i,j,iblk))
+            if (abs(vocn(i,j,iblk)) .gt. maxvo) maxvo = abs(vocn(i,j,iblk))
 
          else
          ! ocean current
@@ -5143,8 +5162,8 @@
             vocn(i,j,iblk) = -p2*real(i-nghost, kind=dbl_kind) &
                  / real(ny_global,kind=dbl_kind) + p1
 
-            uocn(i,j,iblk) = uocn(i,j,iblk) * uvm(i,j,iblk)
-            vocn(i,j,iblk) = vocn(i,j,iblk) * uvm(i,j,iblk)
+!            uocn(i,j,iblk) = uocn(i,j,iblk) * uvm(i,j,iblk)
+!            vocn(i,j,iblk) = vocn(i,j,iblk) * uvm(i,j,iblk)
 
          ! wind components
             uatm(i,j,iblk) = c5 + (sin(pi2*time/period)-c3) &
@@ -5158,6 +5177,9 @@
                  * sin(pi2*real(j-nghost, kind=dbl_kind)  &
                  /real(ny_global,kind=dbl_kind))
          endif
+         
+         uocn(i,j,iblk) = uocn(i,j,iblk) * uvm(i,j,iblk)
+         vocn(i,j,iblk) = vocn(i,j,iblk) * uvm(i,j,iblk)
          ! wind stress
          wind(i,j,iblk) = sqrt(uatm(i,j,iblk)**2 + vatm(i,j,iblk)**2)
          tau = rhoa(i,j,iblk) * 0.0012_dbl_kind * wind(i,j,iblk)
@@ -5191,6 +5213,8 @@
          enddo  
          enddo  
       enddo ! nblocks
+      
+      print *, 'Max values ', maxua, maxva, maxuo, maxvo
 
       end subroutine box2001_data
 
