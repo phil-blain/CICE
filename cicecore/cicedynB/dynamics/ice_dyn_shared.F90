@@ -415,6 +415,8 @@
                             uvel,       vvel,       &
                             Tbu)
 
+      use ice_forcing, only: atm_data_type
+
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
          ilo,ihi,jlo,jhi       ! beginning and end of physical domain
@@ -613,8 +615,13 @@
          strtltx(i,j) = -gravit*umass(i,j)*ss_tltx(i,j)
          strtlty(i,j) = -gravit*umass(i,j)*ss_tlty(i,j)
 #endif
-         forcex(i,j) = strairx(i,j) + strtltx(i,j)
-         forcey(i,j) = strairy(i,j) + strtlty(i,j)
+         if (trim(atm_data_type) == 'box2001') then
+            forcex(i,j) = aiu(i,j)*strairx(i,j) + strtltx(i,j)
+            forcey(i,j) = aiu(i,j)*strairy(i,j) + strtlty(i,j)
+         else
+            forcex(i,j) = strairx(i,j) + strtltx(i,j)
+            forcey(i,j) = strairy(i,j) + strtlty(i,j)
+         endif
       enddo
 
       end subroutine dyn_prep2
