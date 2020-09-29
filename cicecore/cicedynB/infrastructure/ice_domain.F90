@@ -351,7 +351,6 @@
       file=__FILE__, line=__LINE__)
 
    if (trim(ns_boundary_type) == 'closed') then
-      call abort_ice(subname//'ERROR: ns_boundary_type = closed not supported')
       allocate(nocn(nblocks_tot))
       nocn = 0
       do n=1,nblocks_tot
@@ -390,7 +389,6 @@
       deallocate(nocn)
    endif
    if (trim(ew_boundary_type) == 'closed') then
-      call abort_ice(subname//'ERROR: ew_boundary_type = closed not supported')
       allocate(nocn(nblocks_tot))
       nocn = 0
       do n=1,nblocks_tot
