@@ -311,8 +311,10 @@ contains
       end do
    end do
 
-!   dbug = .true.
    dbug = .false.
+#ifdef DEBUG_BLOCKS
+   dbug = .true.
+#endif
    if (dbug) then
       if (my_task == master_task) then
       write(nu_diag,*) 'block i,j locations'

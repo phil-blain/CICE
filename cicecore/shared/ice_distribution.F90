@@ -178,8 +178,10 @@
 !
 !-----------------------------------------------------------------------
 
-!   dbug = .true.
    dbug = .false.
+#ifdef DEBUG_BLOCKS
+   dbug = .true.
+#endif
    if (bcount > 0) then
       do n=1,size(distribution%blockLocation)
          if (distribution%blockLocation(n) == my_task+1) then

@@ -167,14 +167,17 @@ set to -1, the code will compute a tentative ``max_blocks`` on the fly.
 
 A loop at the end of routine *create\_blocks* in module
 **ice\_blocks.F90** will print the locations for all of the blocks on
-the global grid if dbug is set to be true. Likewise, a similar loop at
+the global grid if the local variable ``dbug`` is set to be true. Likewise, a similar loop at
 the end of routine *create\_local\_block\_ids* in module
 **ice\_distribution.F90** will print the processor and local block
 number for each block. With this information, the grid decomposition
-into processors and blocks can be ascertained. The dbug flag must be
-manually set in the code in each case (independently of the dbug flag in
+into processors and blocks can be ascertained. This ``dbug`` variable must be
+manually set in the code in each case (independently of the ``dbug`` flag in
 **ice\_in**), as there may be hundreds or thousands of blocks to print
-and this information should be needed only rarely. This information is
+and this information should be needed only rarely. The local ``dbug`` variable
+can be set to true in both subroutines by
+compiling with the ``DEBUG_BLOCKS`` CPP macro, which can be done easily by using the
+``debugblocks`` option with **cice.setup**. This information is
 much easier to look at using a debugger such as Totalview.  There is also
 an output field that can be activated in `icefields\_nml`, ``f_blkmask``, 
 that prints out the variable ``blkmask`` to the history file and 
