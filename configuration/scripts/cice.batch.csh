@@ -216,6 +216,7 @@ cat >> ${jobfile} << EOFB
 #PBS -j oe
 #PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}
 #PBS -l walltime=${batchtime}
+#PBS -W umask=022
 EOFB
 
 else if (${ICE_MACHINE} =~ hpcr*) then
@@ -224,6 +225,7 @@ cat >> ${jobfile} << EOFB
 #PBS -j oe
 #PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}:mem=20gb
 #PBS -l walltime=${batchtime}
+#PBS -W umask=022
 EOFB
 
 else if (${ICE_MACHINE} =~ freya* ) then
