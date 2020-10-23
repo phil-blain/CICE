@@ -191,6 +191,7 @@ cat >> ${jobfile} << EOFB
 #PBS -j oe
 #PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}
 #PBS -l walltime=${batchtime}
+#PBS -W umask=022
 EOFB
 
 else if (${ICE_MACHINE} =~ hera*) then
