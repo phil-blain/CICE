@@ -5108,7 +5108,7 @@
 
       ! local parameters
 
-      logical (kind=log_kind) :: EXPjfl
+      logical (kind=log_kind) :: EXPmetal ! special EXP for Mehlmann et al 
       
       integer (kind=int_kind) :: &
          iblk, i,j           ! loop indices
@@ -5121,11 +5121,11 @@
       call icepack_query_parameters(pi_out=pi, pi2_out=pi2, puny_out=puny)
       call icepack_query_parameters(secday_out=secday)
 
-      EXPjfl = .true.
+      EXPmetal = .true.
       vmax = 15d0
       mtime = 4d0 + (istep*dt/secday)
-      mx = 50d0 + 50d0*mtime
-      my = 50d0 + 50d0*mtime
+      mx = 51.2d0 + 51.2d0*mtime
+      my = 51.2d0 + 51.2d0*mtime
       malpha = 0.5d0*pi - 0.5d0*pi/5d0
       ws = tanh(mtime*(8d0-mtime)/2d0)
       maxua=0d0
@@ -5137,7 +5137,7 @@
          do j = 1, ny_block   
          do i = 1, nx_block   
 
-         if (EXPjfl) then
+         if (EXPmetal) then
             
             xdist=i*dxrect/1d05 ! in km
             ydist=j*dyrect/1d05 ! in km

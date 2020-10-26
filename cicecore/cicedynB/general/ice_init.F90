@@ -2147,7 +2147,7 @@
          edge_init_nh =  70._dbl_kind, & ! initial ice edge, N.Hem. (deg) 
          edge_init_sh = -60._dbl_kind    ! initial ice edge, S.Hem. (deg)
 
-      logical (kind=log_kind) :: tr_brine, tr_lvl, EXPjfl
+      logical (kind=log_kind) :: tr_brine, tr_lvl, EXPmetal ! EXP Melhmann ET AL = EXPmetal
       integer (kind=int_kind) :: ntrcr
       integer (kind=int_kind) :: nt_Tsfc, nt_qice, nt_qsno, nt_sice
       integer (kind=int_kind) :: nt_fbri, nt_alvl, nt_vlvl
@@ -2155,9 +2155,9 @@
       character(len=*), parameter :: subname='(set_state_var)'
 
       !-----------------------------------------------------------------
-      EXPjfl = .true. ! for special exp for Melhmann et al paper
+      EXPmetal = .true. ! for special exp for Melhmann et al paper
       hmean  = 0.3d0
-      if (EXPjfl .and. hmean .ne. 0.3d0) then
+      if (EXPmetal .and. hmean .ne. 0.3d0) then
          print *, 'currently put in first thick cat...verify this if hmean ne 0.3'
          stop
       endif
@@ -2215,7 +2215,7 @@
 
          if (trim(ice_data_type) == 'box2001') then
 
-            if (EXPjfl) then ! 1d vectors (n)...not on grid yet
+            if (EXPmetal) then ! 1d vectors (n)...not on grid yet
                hbar = 0.3d0  ! initial ice thickness (temporary)                                           
                do n = 1, ncat
                   hinit(n) = c0
@@ -2323,13 +2323,15 @@
 
                if (trim(ice_data_type) == 'box2001') then
                   
-                  if (EXPjfl) then ! put on grid
+                  if (EXPmetal) then ! put on grid
                      vicen(i,j,n)=0d0
                      aicen(i,j,n)=0d0
                      if (n .eq. 1) then
 
-                        xdist=i*dxrect/1d05 ! in km
-                        ydist=j*dyrect/1d05 ! in km
+                        !xdist=i*dxrect/1d05 ! in km
+                        !ydist=j*dyrect/1d05 ! in km
+                        xdist=(i*1d0 - 0.5d0)*dxrect/1d05 ! in km                           
+                        ydist=(j*1d0 - 0.5d0)*dyrect/1d05 ! in km
                         htp = hmean + 0.005d0*sin(6d0*xdist/100d0)+0.005d0*sin(3d0*ydist/100d0)
                         aicen(i,j,n)=1d0
                         vicen(i,j,n) = htp * aicen(i,j,n)
@@ -2372,7 +2374,7 @@
                   vicen(i,j,n) = hinit(n) * ainit(n) ! m
                endif
 
-               if (EXPjfl) then 
+               if (EXPmetal) then 
                   vsnon(i,j,n) = c0
                else
                   vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
