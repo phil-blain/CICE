@@ -615,13 +615,13 @@
          strtltx(i,j) = -gravit*umass(i,j)*ss_tltx(i,j)
          strtlty(i,j) = -gravit*umass(i,j)*ss_tlty(i,j)
 #endif
-         if (trim(atm_data_type) == 'box2001') then
-            forcex(i,j) = aiu(i,j)*strairx(i,j) + strtltx(i,j)
-            forcey(i,j) = aiu(i,j)*strairy(i,j) + strtlty(i,j)
-         else
+        ! if (trim(atm_data_type) == 'box2001') then
+        !    forcex(i,j) = aiu(i,j)*strairx(i,j) + strtltx(i,j)
+        !    forcey(i,j) = aiu(i,j)*strairy(i,j) + strtlty(i,j)
+        ! else
             forcex(i,j) = strairx(i,j) + strtltx(i,j)
             forcey(i,j) = strairy(i,j) + strtlty(i,j)
-         endif
+        ! endif
       enddo
 
       end subroutine dyn_prep2
