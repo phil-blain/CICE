@@ -1155,12 +1155,14 @@
         strp_tmp
 
       logical :: capping ! of the viscous coeff
+      logical :: rep_pressure
 
       character(len=*), parameter :: subname = '(calc_zeta_dPr)'
 
       ! Initialize
 
       capping = .false.
+      rep_pressure = .true.
       
       ! Initialize stPr and zetaD to zero (for cells where icetmask is false)
       stPr  = c0
@@ -1205,12 +1207,18 @@
       ! the stresses                            ! kg/s^2
       ! (1) northeast, (2) northwest, (3) southwest, (4) southeast
       !-----------------------------------------------------------------
+         if (rep_pressure) then
+            stressp_1 = -zetaD(i,j,1)*(Deltane*(c1-Ktens))
+            stressp_2 = -zetaD(i,j,2)*(Deltanw*(c1-Ktens))
+            stressp_3 = -zetaD(i,j,3)*(Deltasw*(c1-Ktens))
+            stressp_4 = -zetaD(i,j,4)*(Deltase*(c1-Ktens))
+         else
+            stressp_1 = -strength(i,j)*(c1-Ktens)
+            stressp_2 = -strength(i,j)*(c1-Ktens)
+            stressp_3 = -strength(i,j)*(c1-Ktens)
+            stressp_4 = -strength(i,j)*(c1-Ktens)
+         endif
 
-         stressp_1 = -zetaD(i,j,1)*(Deltane*(c1-Ktens))
-         stressp_2 = -zetaD(i,j,2)*(Deltanw*(c1-Ktens))
-         stressp_3 = -zetaD(i,j,3)*(Deltasw*(c1-Ktens))
-         stressp_4 = -zetaD(i,j,4)*(Deltase*(c1-Ktens))
-         
       !-----------------------------------------------------------------
       ! combinations of the Pr related stresses for the momentum equation ! kg/s^2
       !-----------------------------------------------------------------
