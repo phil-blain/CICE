@@ -2313,12 +2313,12 @@
          endif                  ! rectgrid
 
          do n = 1, ncat
-
+            
             ! ice volume, snow volume
             do ij = 1, icells
                i = indxi(ij)
                j = indxj(ij)
-
+               
                aicen(i,j,n) = ainit(n)
 
                if (trim(ice_data_type) == 'box2001') then
@@ -2330,8 +2330,8 @@
 
                         !xdist=i*dxrect/1d05 ! in km
                         !ydist=j*dyrect/1d05 ! in km
-                        xdist=(i*1d0 - 0.5d0)*dxrect/1d05 ! in km                           
-                        ydist=(j*1d0 - 0.5d0)*dyrect/1d05 ! in km
+                        xdist=((i-3)*1d0 - 0.5d0)*dxrect/1d05 ! in km                           
+                        ydist=((j-3)*1d0 - 0.5d0)*dyrect/1d05 ! in km
                         htp = hmean + 0.005d0*sin(6d0*xdist/100d0)+0.005d0*sin(3d0*ydist/100d0)
                         aicen(i,j,n)=1d0
                         vicen(i,j,n) = htp * aicen(i,j,n)

@@ -5148,16 +5148,16 @@
 
          if (EXPmetal) then
             
-            xdist=i*dxrect/1d05 ! in km
-            ydist=j*dyrect/1d05 ! in km
+            xdist=(i-3)*dxrect/1d05 ! in km
+            ydist=(j-3)*dyrect/1d05 ! in km
             mr = sqrt( (mx-xdist)**2d0 + (my-ydist)**2d0 )
             ms = (1d0/50d0)*exp(-0.01d0*mr)
             wx = cos(malpha)*(xdist-mx) + sin(malpha)*(ydist-my)
             wy = -sin(malpha)*(xdist-mx) + cos(malpha)*(ydist-my)
             uatm(i,j,iblk) = -wx * vmax * ms * ws
             vatm(i,j,iblk) = -wy * vmax * ms * ws
-            uocn(i,j,iblk) = 0.01d0 * (2d0*ydist - 500d0) / 500d0
-            vocn(i,j,iblk) = -0.01d0 * (2d0*ydist - 500d0) / 500d0
+            uocn(i,j,iblk) = 0.01d0 * (2d0*ydist - 512d0) / 512d0
+            vocn(i,j,iblk) = -0.01d0 * (2d0*ydist - 512d0) / 512d0
             if (abs(uatm(i,j,iblk)) .gt. maxua) maxua = abs(uatm(i,j,iblk))
             if (abs(vatm(i,j,iblk)) .gt. maxva) maxva = abs(vatm(i,j,iblk))
             if (abs(uocn(i,j,iblk)) .gt. maxuo) maxuo = abs(uocn(i,j,iblk))
@@ -5193,8 +5193,8 @@
          wind(i,j,iblk) = sqrt(uatm(i,j,iblk)**2 + vatm(i,j,iblk)**2)
          tau = rhoa(i,j,iblk) * 0.0012_dbl_kind * wind(i,j,iblk)
 
-         strax(i,j,iblk) = aiu(i,j,iblk) * tau * uatm(i,j,iblk)
-         stray(i,j,iblk) = aiu(i,j,iblk) * tau * vatm(i,j,iblk)
+         strax(i,j,iblk) = aiu(i,j,iblk) * tau * uatm(i,j,iblk)* uvm(i,j,iblk)
+         stray(i,j,iblk) = aiu(i,j,iblk) * tau * vatm(i,j,iblk)* uvm(i,j,iblk)
 
 ! initialization test
        ! Diagonal wind vectors 1
