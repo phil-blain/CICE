@@ -5157,7 +5157,7 @@
             uatm(i,j,iblk) = -wx * vmax * ms * ws
             vatm(i,j,iblk) = -wy * vmax * ms * ws
             uocn(i,j,iblk) = 0.01d0 * (2d0*ydist - 512d0) / 512d0
-            vocn(i,j,iblk) = -0.01d0 * (2d0*ydist - 512d0) / 512d0
+            vocn(i,j,iblk) = -0.01d0 * (2d0*xdist - 512d0) / 512d0
             if (abs(uatm(i,j,iblk)) .gt. maxua) maxua = abs(uatm(i,j,iblk))
             if (abs(vatm(i,j,iblk)) .gt. maxva) maxva = abs(vatm(i,j,iblk))
             if (abs(uocn(i,j,iblk)) .gt. maxuo) maxuo = abs(uocn(i,j,iblk))
