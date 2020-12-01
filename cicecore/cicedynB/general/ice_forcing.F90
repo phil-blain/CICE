@@ -5123,7 +5123,7 @@
           secday, pi , puny, period, pi2, tau
       ! Melhmann et al
       real (kind=dbl_kind) :: mx, my, mtime, ms, mr, malpha, xdist, ydist, vmax
-      real (kind=dbl_kind) :: wx, wy, ws, wr, maxua, maxva, maxuo, maxvo
+      real (kind=dbl_kind) :: vmaxo, wx, wy, ws, wr, maxua, maxva, maxuo, maxvo
       call icepack_query_parameters(pi_out=pi, pi2_out=pi2, puny_out=puny)
       call icepack_query_parameters(secday_out=secday)
 
@@ -5132,6 +5132,7 @@
 
       EXPmetal = .true.
       vmax = 15d0
+      vmaxo = 0.01d0
       mtime = 4d0 + (istep*dt/secday)
       mx = 51.2d0 + 51.2d0*mtime
       my = 51.2d0 + 51.2d0*mtime
@@ -5156,8 +5157,8 @@
             wy = -sin(malpha)*(xdist-mx) + cos(malpha)*(ydist-my)
             uatm(i,j,iblk) = -wx * vmax * ms * ws
             vatm(i,j,iblk) = -wy * vmax * ms * ws
-            uocn(i,j,iblk) = 0.01d0 * (2d0*ydist - 512d0) / 512d0
-            vocn(i,j,iblk) = -0.01d0 * (2d0*xdist - 512d0) / 512d0
+            uocn(i,j,iblk) = vmaxo *  (2d0*ydist/512d0 - 1d0)
+            vocn(i,j,iblk) = -vmaxo * (2d0*xdist/512d0 - 1d0)
             if (abs(uatm(i,j,iblk)) .gt. maxua) maxua = abs(uatm(i,j,iblk))
             if (abs(vatm(i,j,iblk)) .gt. maxva) maxva = abs(vatm(i,j,iblk))
             if (abs(uocn(i,j,iblk)) .gt. maxuo) maxuo = abs(uocn(i,j,iblk))
