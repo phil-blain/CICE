@@ -664,7 +664,6 @@
       integer (kind=int_kind), intent(in) :: ns
 
       integer (kind=int_kind) :: iyear, imonth, iday, isec
-      character (len=1) :: cstream
       character(len=*), parameter :: subname = '(construct_filename)'
 
         iyear = myear
@@ -695,33 +694,28 @@
           endif
          endif
 
-         cstream = ''
-!echmod ! this was implemented for CESM but it breaks post-processing software
-!echmod ! of other groups (including RASM which uses CESMCOUPLED)
-!echmod         if (ns > 1) write(cstream,'(i1.1)') ns-1
-
          if (histfreq(ns) == '1') then ! instantaneous, write every dt
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_inst.', &
+            history_file(1:lenstr(history_file)),'_inst.', &
              iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
 
          elseif (hist_avg) then    ! write averaged data
 
           if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream), &
+            history_file(1:lenstr(history_file)), &
              '.',iyear,'-',imonth,'-',iday,'.',suffix
           elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
            write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_', &
+            history_file(1:lenstr(history_file)),'_', &
              histfreq_n(ns),'h.',iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
           elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
            write(ncfile,'(a,a,i4.4,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
+            history_file(1:lenstr(history_file)),'.', &
              iyear,'-',imonth,'.',suffix
           elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
            write(ncfile,'(a,a,i4.4,a,a)') &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
+            history_file(1:lenstr(history_file)),'.', &
              iyear,'.',suffix
           endif
 
