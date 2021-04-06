@@ -694,12 +694,7 @@
           endif
          endif
 
-         if (histfreq(ns) == '1') then ! instantaneous, write every dt
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file)),'_inst.', &
-             iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
-
-         elseif (hist_avg) then    ! write averaged data
+         if (hist_avg) then    ! write averaged data
 
           if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,a)')  &
@@ -719,7 +714,7 @@
              iyear,'.',suffix
           endif
 
-         else                     ! instantaneous with histfreq > dt
+         else                     ! instantaneous output
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
             history_file(1:lenstr(history_file)),'_inst.', &
              iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
