@@ -696,7 +696,11 @@
 
          if (hist_avg) then    ! write averaged data
 
-            if (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
+            if (histfreq(ns) == '1') then ! each histfreq_n(ns) timestep
+               write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
+                  history_file(1:lenstr(history_file)),'_', &
+                  histfreq_n(ns),'dt.',iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
+            elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
                write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
                   history_file(1:lenstr(history_file)),'_', &
                   histfreq_n(ns),'h.',iyear,'-',imonth,'-',iday,'-',msec,'.',suffix
