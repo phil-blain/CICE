@@ -575,7 +575,7 @@
               endif
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg         &
+            if (.not. hist_avg                                  &
                 .or. n==n_divu(ns)      .or. n==n_shear(ns)     &  ! snapshots
                 .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &
                 .or. n==n_sigP(ns)      .or. n==n_trsig(ns)     &
@@ -640,7 +640,7 @@
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (.not. hist_avg) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -881,7 +881,7 @@
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (.not. hist_avg) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -942,7 +942,7 @@
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (.not. hist_avg) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -1003,7 +1003,7 @@
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (.not. hist_avg) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')

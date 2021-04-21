@@ -679,6 +679,7 @@
          imonth,'-',iday,'-',isec,'.',suffix
       else
 
+         ! WHY is histfreq(ns) = 1 special ? and also why this whole block... hist_avg vs not ?
          if (hist_avg .and. histfreq(ns) /= '1') then
             if (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then
             ! do nothing
