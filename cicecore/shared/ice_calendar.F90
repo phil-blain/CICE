@@ -354,7 +354,7 @@
       elapsed_years = myear - year_init
       elapsed_months = elapsed_years*months_per_year + mmonth - month_init
       elapsed_days = compute_days_between(year_init,month_init,day_init,myear,mmonth,mday)
-      elapsed_hours = elapsed_days * hours_per_day
+      elapsed_hours = elapsed_days * hours_per_day + hour - sec_init / seconds_per_hour
       call calendar_date2time(myear,mmonth,mday,msec,timesecs)
 
       !--- compute other stuff
