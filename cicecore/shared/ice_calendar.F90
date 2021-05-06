@@ -328,6 +328,7 @@
       integer (kind=int_kind) :: &
          ns                         , & ! loop index
          yearp,monthp,dayp,hourp    , & ! previous year, month, day, hour
+         elapsed_years              , & ! since beginning this run
          elapsed_days               , & ! since beginning this run
          elapsed_months             , & ! since beginning this run
          elapsed_hours                  ! since beginning this run
@@ -350,7 +351,8 @@
       idate = (myear)*10000 + mmonth*100 + mday ! date (yyyymmdd) 
       yday = daycal(mmonth) + mday            ! day of the year
       hour = (msec+1)/(seconds_per_hour)
-      elapsed_months = (myear - year_init)*months_per_year + mmonth - month_init
+      elapsed_years = myear - year_init
+      elapsed_months = elapsed_years*months_per_year + mmonth - month_init
       elapsed_days = compute_days_between(year_init,month_init,day_init,myear,mmonth,mday)
       elapsed_hours = elapsed_days * hours_per_day
       call calendar_date2time(myear,mmonth,mday,msec,timesecs)
@@ -373,7 +375,7 @@
          select case (histfreq(ns))
          case ("y", "Y")
             if (new_year  .and. histfreq_n(ns)/=0) then
-               if (mod(myear, histfreq_n(ns))==0) &
+               if (mod(elapsed_years, histfreq_n(ns))==0) &
                    write_history(ns) = .true.
             endif
          case ("m", "M")
