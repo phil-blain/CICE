@@ -24,8 +24,8 @@ endif
 
 SCC   := icc
 SFC   := ifort
-MPICC := mpicc
-MPIFC := mpif90
+MPICC := mpiicc
+MPIFC := mpiifort
 
 ifeq ($(ICE_COMMDIR), mpi)
   FC := $(MPIFC)
