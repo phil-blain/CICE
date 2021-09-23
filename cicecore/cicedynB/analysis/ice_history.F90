@@ -3992,7 +3992,9 @@
            if (allocated(a4Df)) a4Df(:,:,:,:,:,:) = c0
            avgct(:) = c0
            albcnt(:,:,:,:) = c0
+#ifndef CICE_IN_NEMO
            write_ic = .false.        ! write initial condition once at most
+#endif
         else
            avgct(ns) = c0
            albcnt(:,:,:,ns) = c0

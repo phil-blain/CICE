@@ -81,6 +81,7 @@
           faero_data, faero_default, faero_optics, alloc_forcing_bgc
       use ice_grid, only: init_grid1, init_grid2, alloc_grid
       use ice_history, only: init_hist, accum_hist
+      use ice_history_shared, only: incond_file
       use ice_restart_shared, only: restart, runid, runtype
       use ice_init, only: input_data, init_state
       use ice_init_column, only: init_thermo_vertical, init_shortwave, init_zbgc, input_zbgc, count_tracers
@@ -215,7 +216,9 @@
       call init_flux_atm        ! initialize atmosphere fluxes sent to coupler
       call init_flux_ocn        ! initialize ocean fluxes sent to coupler
 
+      incond_file='iceh_ic.orig'
       if (write_ic) call accum_hist(dt) ! write initial conditions 
+      incond_file='iceh_ic'
 
       end subroutine cice_init
 
