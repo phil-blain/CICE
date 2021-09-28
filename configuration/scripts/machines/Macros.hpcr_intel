@@ -13,7 +13,6 @@ FIXEDFLAGS := -132
 FREEFLAGS  := -FR
 FFLAGS     := -fp-model source -convert big_endian -assume byterecl -ftz -traceback  -diag-disable 5140
 #-xHost
-FFLAGS_NOOPT:= -O0
 
 ifeq ($(ICE_BLDDEBUG), true)
   FFLAGS     += -O0 -g -check -fpe0 -ftrapuv -fp-model except -check noarg_temp_created -init=snan,arrays
@@ -36,27 +35,10 @@ else
 endif
 LD:= $(FC)
 
-#NETCDF_PATH := /fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/
-
-PIO_CONFIG_OPTS:= --enable-filesystem-hints=gpfs 
-
-#PNETCDF_PATH := $(PNETCDF)
-#PNETCDF_PATH := /glade/u/apps/ch/opt/pio/2.2/mpt/2.15f/intel/17.0.1/lib
-
-INCLDIR := $(INCLDIR)
-
-LIB_NETCDF := $(NETCDF_PATH)/lib
-LIB_PNETCDF := $(PNETCDF_PATH)/lib
-LIB_MPI := $(IMPILIBDIR)
-
-#SLIBS   := -L$(LIB_NETCDF) -lnetcdff -lnetcdf -L$(LIB_PNETCDF) -lpnetcdf -lgptl
-#SLIBS   := -L$(LIB_NETCDF) -lnetcdff -lnetcdf
-
 ifeq ($(ICE_IOTYPE), netcdf)
    INCLDIR += $(shell nf-config --fflags)
    SLIBS   := $(shell nf-config --flibs)
 endif
-
 
 ifeq ($(ICE_THREADED), true) 
    LDFLAGS += -openmp 
@@ -64,15 +46,3 @@ ifeq ($(ICE_THREADED), true)
    FFLAGS += -openmp 
 endif
 
-### if using parallel I/O, load all 3 libraries.  PIO must be first!
-ifeq ($(IO_TYPE), pio)
-   PIO_PATH:=/glade/u/apps/ch/opt/pio/2.2/mpt/2.15f/intel/17.0.1/lib
-   INCLDIR += -I/glade/u/apps/ch/opt/pio/2.2/mpt/2.15f/intel/17.0.1/include
-   SLIBS   := $(SLIBS) -L$(PIO_PATH) -lpiof
-
-   CPPDEFS :=  $(CPPDEFS) -Dncdf
-endif
-
-ifeq ($(IO_TYPE), netcdf)
-   CPPDEFS :=  $(CPPDEFS) -Dncdf
-endif
