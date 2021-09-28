@@ -58,7 +58,7 @@ ifeq ($(ICE_IOTYPE), netcdf)
 endif
 
 
-ifeq ($(compile_threaded), true) 
+ifeq ($(ICE_THREADED), true) 
    LDFLAGS += -openmp 
    CFLAGS += -openmp 
    FFLAGS += -openmp 
