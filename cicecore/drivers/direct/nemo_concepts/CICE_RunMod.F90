@@ -215,7 +215,7 @@
          !$OMP PARALLEL DO PRIVATE(iblk)
          do iblk = 1, nblocks
 
-            if (ktherm >= 0) then
+            ! if (ktherm >= 0) then
 
       !-----------------------------------------------------------------
       ! Scale radiation fields
@@ -229,9 +229,11 @@
             
                call step_therm1     (dt, iblk) ! vertical thermodynamics
                call biogeochemistry (dt, iblk) ! biogeochemistry
-               call step_therm2     (dt, iblk) ! ice thickness distribution thermo
+               if (ktherm >= 0) then
+                  call step_therm2     (dt, iblk) ! ice thickness distribution thermo
+               endif
 
-            endif
+            ! endif
 
          enddo ! iblk
          !$OMP END PARALLEL DO
