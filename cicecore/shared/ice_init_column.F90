@@ -302,6 +302,11 @@
                alidrn(i,j,n,iblk) = c0
                alvdfn(i,j,n,iblk) = c0
                alidfn(i,j,n,iblk) = c0
+               albicen(i,j,n,iblk) = c0
+               albsnon(i,j,n,iblk) = c0
+               apeffn(i,j,n,iblk) = c0
+               albpndn(i,j,n,iblk) = c0
+               snowfracn(i,j,n,iblk) = c0
                fswsfcn(i,j,n,iblk) = c0
                fswintn(i,j,n,iblk) = c0
                fswthrun(i,j,n,iblk) = c0
