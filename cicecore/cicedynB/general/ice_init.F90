@@ -2259,7 +2259,7 @@
 
       real (kind=dbl_kind), parameter :: &
          hsno_init = 0.20_dbl_kind   , & ! initial snow thickness (m)
-         edge_init_nh =  70._dbl_kind, & ! initial ice edge, N.Hem. (deg) 
+         edge_init_nh =  60._dbl_kind, & ! initial ice edge, N.Hem. (deg) 
          edge_init_sh = -60._dbl_kind    ! initial ice edge, S.Hem. (deg)
 
       logical (kind=log_kind) :: tr_brine, tr_lvl
@@ -2349,7 +2349,7 @@
          else
 
       ! initial category areas in cells with ice
-         hbar = c3  ! initial ice thickness with greatest area
+         hbar = c1  ! initial ice thickness with greatest area
                     ! Note: the resulting average ice thickness 
                     ! tends to be less than hbar due to the
                     ! nonlinear distribution of ice thicknesses 
