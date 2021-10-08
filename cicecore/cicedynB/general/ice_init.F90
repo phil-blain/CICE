@@ -14,7 +14,7 @@
 
       use ice_kinds_mod
       use ice_communicate, only: my_task, master_task, ice_barrier
-      use ice_constants, only: c0, c1, c2, c3, p2, p5
+      use ice_constants, only: c0, c1, c2, c3, p2, p5, p75
       use ice_exit, only: abort_ice
       use ice_fileunits, only: nu_nml, nu_diag, nu_diag_set, nml_filename, diag_type, &
           ice_stdout, get_fileunit, release_fileunit, bfbflag, flush_fileunit, &
@@ -2349,7 +2349,7 @@
          else
 
       ! initial category areas in cells with ice
-         hbar = c1  ! initial ice thickness with greatest area
+         hbar = p75  ! initial ice thickness with greatest area
                     ! Note: the resulting average ice thickness 
                     ! tends to be less than hbar due to the
                     ! nonlinear distribution of ice thicknesses 
@@ -2365,7 +2365,7 @@
             sum = sum + ainit(n)
          enddo
          do n = 1, ncat
-            ainit(n) = ainit(n) / (sum + puny/ncat) ! normalize
+            ainit(n) = ainit(n) / (sum + puny/ncat) * p5 ! normalize
          enddo
 
          endif ! ice_data_type
