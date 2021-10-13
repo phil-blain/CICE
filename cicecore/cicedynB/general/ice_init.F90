@@ -2365,7 +2365,7 @@
             sum = sum + ainit(n)
          enddo
          do n = 1, ncat
-            ainit(n) = ainit(n) / (sum + puny/ncat) * p5 ! normalize
+            ainit(n) = ainit(n) / (sum + puny/ncat) ! normalize
          enddo
 
          endif ! ice_data_type
