@@ -228,6 +228,19 @@ cat >> ${jobfile} << EOFB
 #PBS -W umask=022
 EOFB
 
+else if (${ICE_MACHINE} =~ ppp3*) then
+cat >> ${jobfile} << EOFB
+#PBS -N ${ICE_CASENAME}
+#PBS -j oe
+#PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}:mem=20gb:res_tmpfs=1000:res_image=eccc/eccc_all_ppp_ubuntu-18.04-amd64_latest
+#PBS -l walltime=${batchtime}
+#PBS -W umask=022
+#PBS -q development
+#PBS -o ${ICE_CASEDIR}
+#PBS -S /bin/csh
+EOFB
+
+
 else if (${ICE_MACHINE} =~ freya* ) then
 cat >> ${jobfile} << EOFB
 #PBS -N ${ICE_CASENAME}

@@ -166,6 +166,18 @@ EOFR
 endif
 
 #=======
+else if (${ICE_MACHINE} =~ ppp3*) then
+if (${ICE_COMMDIR} =~ serial*) then
+cat >> ${jobfile} << EOFR
+./cice >&! \$ICE_RUNLOG_FILE
+EOFR
+else
+cat >> ${jobfile} << EOFR
+rumpirun -np ${ntasks} ./cice >&! \$ICE_RUNLOG_FILE
+EOFR
+endif
+
+#=======
 else if (${ICE_MACHINE} =~ freya*) then
 if (${ICE_COMMDIR} =~ serial*) then
 cat >> ${jobfile} << EOFR
