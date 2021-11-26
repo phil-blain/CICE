@@ -240,6 +240,20 @@ cat >> ${jobfile} << EOFB
 #PBS -S /bin/csh
 EOFB
 
+else if (${ICE_MACHINE} =~ gpsc3*) then
+cat >> ${jobfile} << EOFB
+#SBATCH --export=USER,LOGNAME,HOME,MAIL,PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+#SBATCH -J ${ICE_CASENAME}
+#SBATCH -A ${acct}
+#SBATCH --partition ${queue}
+#SBATCH --time ${batchtime}
+#SBATCH --nodes ${nnodes}
+#SBATCH --ntasks ${ntasks}
+#SBATCH --cpus-per-task ${nthrds}
+#SBATCH --mem-per-cpu=5G
+#SBATCH --comment="eccc/eccc_all_default_ubuntu-18.04-amd64_latest"
+EOFB
+
 
 else if (${ICE_MACHINE} =~ freya* ) then
 cat >> ${jobfile} << EOFB
