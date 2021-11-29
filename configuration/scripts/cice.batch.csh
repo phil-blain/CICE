@@ -219,6 +219,15 @@ cat >> ${jobfile} << EOFB
 #PBS -W umask=022
 EOFB
 
+else if (${ICE_MACHINE} =~ robert* || ${ICE_MACHINE} =~ underhill* ) then
+cat >> ${jobfile} << EOFB
+#PBS -N ${ICE_CASENAME}
+#PBS -j oe
+#PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}
+#PBS -l walltime=${batchtime}
+#PBS -W umask=022
+EOFB
+
 else if (${ICE_MACHINE} =~ hpcr*) then
 cat >> ${jobfile} << EOFB
 #PBS -N ${ICE_CASENAME}

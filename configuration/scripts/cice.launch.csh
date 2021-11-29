@@ -154,7 +154,7 @@ EOFR
 endif
 
 #=======
-else if (${ICE_MACHINE} =~ hpcr*) then
+else if (${ICE_MACHINE} =~ hpcr* || ${ICE_MACHINE} =~ robert*) then
 if (${ICE_COMMDIR} =~ serial*) then
 cat >> ${jobfile} << EOFR
 ./cice >&! \$ICE_RUNLOG_FILE
