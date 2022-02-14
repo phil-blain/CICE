@@ -228,7 +228,7 @@ cat >> ${jobfile} << EOFB
 #PBS -W umask=022
 EOFB
 
-else if (${ICE_MACHINE} =~ hpcr*) then
+else if (${ICE_MACHINE} =~ ppp6* || ${ICE_MACHINE} =~ ppp5*) then
 cat >> ${jobfile} << EOFB
 #PBS -N ${ICE_CASENAME}
 #PBS -j oe
