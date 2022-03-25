@@ -148,7 +148,7 @@
         sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn, &
         rsnw_fall, rsnw_tmax, rhosnew, rhosmin, rhosmax, Tliquidus_max, &
         windmin, drhosdwind, snwlvlfac, &
-        rhos, rhoi, rhosi, rhow, rhofresh
+        rhos, rhoi, rhosi, rhow, rhofresh, zTrf
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, natmiter, &
         kitd, kcatbound, ktransport
@@ -271,7 +271,7 @@
         highfreq,       natmiter,        atmiter_conv,  calc_dragio,    &
         ustar_min,      emissivity,      iceruf,        iceruf_ocn,     &
         fbot_xfer_type, update_ocn_f,    l_mpond_fresh, tfrz_option,    &
-        saltflux_option,ice_ref_salinity,cpl_frazil,                    &
+        saltflux_option,ice_ref_salinity,cpl_frazil,    zTrf,           &
         oceanmixed_ice, restore_ice,     restore_ocn,   trestore,       &
         precip_units,   default_season,  wave_spec_type,nfreq,          &
         atm_data_type,  ocn_data_type,   bgc_data_type, fe_data_type,   &
@@ -463,6 +463,7 @@
       iceruf = 0.0005_dbl_kind ! ice surface roughness at atmosphere interface (m)
       iceruf_ocn = 0.03_dbl_kind ! under-ice roughness (m)
       calc_dragio = .false.    ! compute dragio from iceruf_ocn and thickness of first ocean level
+      zTrf = 2.0               ! reference height for {T,Q,U}ref (m)
       emissivity = 0.985       ! emissivity of snow and ice
       l_mpond_fresh = .false.  ! logical switch for including meltpond freshwater
                                ! flux feedback to ocean model
@@ -1123,6 +1124,7 @@
       call broadcast_scalar(iceruf,               master_task)
       call broadcast_scalar(iceruf_ocn,           master_task)
       call broadcast_scalar(calc_dragio,          master_task)
+      call broadcast_scalar(zTrf,                 master_task)
       call broadcast_scalar(emissivity,           master_task)
       call broadcast_scalar(fbot_xfer_type,       master_task)
       call broadcast_scalar(precip_units,         master_task)
@@ -2440,6 +2442,7 @@
          write(nu_diag,1002) ' rhow             = ', rhow
          write(nu_diag,1002) ' rhofesh          = ', rhofresh
 
+         write(nu_diag,1002) ' zTrf             = ', zTrf
          write(nu_diag,1021) ' fyear_init       = ', fyear_init
          write(nu_diag,1021) ' ycycle           = ', ycycle
          write(nu_diag,1031) ' atm_data_type    = ', trim(atm_data_type)
@@ -2579,7 +2582,7 @@
          floediam_in=floediam, hfrazilmin_in=hfrazilmin, Tliquidus_max_in=Tliquidus_max, &
          aspect_rapid_mode_in=aspect_rapid_mode, dSdt_slow_mode_in=dSdt_slow_mode, &
          phi_c_slow_mode_in=phi_c_slow_mode, phi_i_mushy_in=phi_i_mushy, conserv_check_in=conserv_check, &
-         wave_spec_type_in = wave_spec_type, wave_spec_in=wave_spec, nfreq_in=nfreq, &
+         wave_spec_type_in = wave_spec_type, wave_spec_in=wave_spec, nfreq_in=nfreq, zTrf_in=zTrf,  &
          update_ocn_f_in=update_ocn_f, cpl_frazil_in=cpl_frazil, &
          tfrz_option_in=tfrz_option, kalg_in=kalg, fbot_xfer_type_in=fbot_xfer_type, &
          saltflux_option_in=saltflux_option, ice_ref_salinity_in=ice_ref_salinity, &
