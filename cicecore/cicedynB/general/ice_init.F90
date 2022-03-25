@@ -128,7 +128,8 @@
         mu_rdg, hs0, dpscale, rfracmin, rfracmax, pndaspect, hs1, hp1, &
         a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, dSdt_slow_mode, &
         phi_c_slow_mode, phi_i_mushy, kalg, atmiter_conv, Pstar, Cstar, &
-        sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn
+        sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn, &
+        rhos, rhoi, rhosi, rhow, rhofresh
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, natmiter, &
         kitd, kcatbound, ktransport
@@ -192,6 +193,10 @@
         tr_fsd, restart_fsd,                                            &
         n_iso, n_aero, n_zaero, n_algae,                                &
         n_doc, n_dic, n_don, n_fed, n_fep
+
+      namelist /densities_nml/ &
+        rhos,           rhoi,            rhosi,         rhow,           &
+        rhofresh
 
       namelist /thermo_nml/ &
         kitd,           ktherm,          conduct,     ksno,             &
@@ -324,6 +329,12 @@
       nslyr = 0          ! number of vertical snow layers
       nblyr = 0          ! number of bio layers
 
+      rhos      = 330.0_dbl_kind   ! density of snow (kg/m^3)
+      rhoi      = 917.0_dbl_kind   ! density of ice (kg/m^3)
+      rhosi     = 940.0_dbl_kind   ! average sea ice density
+                                   ! Cox and Weeks, 1982: 919-974 kg/m^2
+      rhow      = 1026.0_dbl_kind  ! density of seawater (kg/m^3)
+      rhofresh  = 1000.0_dbl_kind  ! density of fresh water (kg/m^3)
       kitd = 1           ! type of itd conversions (0 = delta, 1 = linear)
       kcatbound = 1      ! category boundary formula (0 = old, 1 = new, etc)
       kdyn = 1           ! type of dynamics (-1, 0 = off, 1 = evp, 2 = eap, 3 = vp)
@@ -533,6 +544,9 @@
             print*,'Reading tracer_nml'
                read(nu_nml, nml=tracer_nml,iostat=nml_error)
                if (nml_error /= 0) exit
+            print*,'Reading densities_nml'
+               read(nu_nml, nml=densities_nml,iostat=nml_error)
+               if (nml_error /= 0) exit
             print*,'Reading thermo_nml'
                read(nu_nml, nml=thermo_nml,iostat=nml_error)
                if (nml_error /= 0) exit
@@ -664,6 +678,11 @@
       call broadcast_scalar(bathymetry_format,    master_task)
       call broadcast_scalar(use_bathymetry,       master_task)
       call broadcast_scalar(kmt_file,             master_task)
+      call broadcast_scalar(rhos,                 master_task)
+      call broadcast_scalar(rhoi,                 master_task)
+      call broadcast_scalar(rhosi,                master_task)
+      call broadcast_scalar(rhow,                 master_task)
+      call broadcast_scalar(rhofresh,             master_task)
       call broadcast_scalar(kitd,                 master_task)
       call broadcast_scalar(kcatbound,            master_task)
       call broadcast_scalar(kdyn,                 master_task)
@@ -1737,6 +1756,12 @@
 
          write(nu_diag,1011) ' conserv_check    = ', conserv_check
 
+         write(nu_diag,1002) ' rhos             = ', rhos
+         write(nu_diag,1002) ' rhoi             = ', rhoi
+         write(nu_diag,1002) ' rhosi            = ', rhosi
+         write(nu_diag,1002) ' rhow             = ', rhow
+         write(nu_diag,1002) ' rhofesh          = ', rhofresh
+
          write(nu_diag,1021) ' fyear_init       = ', fyear_init
          write(nu_diag,1021) ' ycycle           = ', ycycle
          write(nu_diag,1031) ' atm_data_type    = ', trim(atm_data_type)
@@ -1848,6 +1873,7 @@
          R_snw_in=R_snw, dT_mlt_in=dT_mlt, rsnw_mlt_in=rsnw_mlt, &
          kstrength_in=kstrength, krdg_partic_in=krdg_partic, krdg_redist_in=krdg_redist, mu_rdg_in=mu_rdg, &
          atmbndy_in=atmbndy, calc_strair_in=calc_strair, formdrag_in=formdrag, highfreq_in=highfreq, &
+         rhos_in=rhos, rhoi_in=rhoi, rhosi_in=rhosi, rhow_in=rhow, rhofresh_in=rhofresh, &
          kitd_in=kitd, kcatbound_in=kcatbound, hs0_in=hs0, dpscale_in=dpscale, frzpnd_in=frzpnd, &
          rfracmin_in=rfracmin, rfracmax_in=rfracmax, pndaspect_in=pndaspect, hs1_in=hs1, hp1_in=hp1, &
          ktherm_in=ktherm, calc_Tsfc_in=calc_Tsfc, conduct_in=conduct, &

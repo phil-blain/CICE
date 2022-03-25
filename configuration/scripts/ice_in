@@ -108,6 +108,14 @@
     restart_fsd  = .false.
 /
 
+&densities_nml
+    rhos      = 330.0
+    rhoi      = 917.0
+    rhosi     = 940.0
+    rhow      = 1026.0
+    rhofresh  = 1000.0
+/
+
 &thermo_nml
     kitd              = 1
     ktherm            = 2
