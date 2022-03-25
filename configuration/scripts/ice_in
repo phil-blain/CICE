@@ -257,6 +257,7 @@
     iceruf          = 0.0005
     calc_dragio     = .false.
     iceruf_ocn      = 0.03
+    zTrf            = 2.0
     emissivity      = 0.985
     fbot_xfer_type  = 'constant'
     update_ocn_f    = .false.
