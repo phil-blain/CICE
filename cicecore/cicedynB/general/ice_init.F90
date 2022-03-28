@@ -128,7 +128,8 @@
         mu_rdg, hs0, dpscale, rfracmin, rfracmax, pndaspect, hs1, hp1, &
         a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, dSdt_slow_mode, &
         phi_c_slow_mode, phi_i_mushy, kalg, atmiter_conv, Pstar, Cstar, &
-        sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn
+        sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn, &
+        rhos, rhoi, rhosi, rhow, rhofresh, zTrf, saltmax
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, natmiter, &
         kitd, kcatbound, ktransport
@@ -193,11 +194,15 @@
         n_iso, n_aero, n_zaero, n_algae,                                &
         n_doc, n_dic, n_don, n_fed, n_fep
 
+      namelist /densities_nml/ &
+        rhos,           rhoi,            rhosi,         rhow,           &
+        rhofresh
+
       namelist /thermo_nml/ &
         kitd,           ktherm,          conduct,     ksno,             &
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
         dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy,                   &
-        floediam,       hfrazilmin
+        floediam,       hfrazilmin,      saltmax
 
       namelist /dynamics_nml/ &
         kdyn,           ndte,           revised_evp,    yield_curve,    &
@@ -236,7 +241,7 @@
         precip_units,   default_season,  wave_spec_type,nfreq,          &
         atm_data_type,  ocn_data_type,   bgc_data_type, fe_data_type,   &
         ice_data_type,  wave_spec_file,  restart_coszen,                &
-        fyear_init,     ycycle,                                         &
+        fyear_init,     ycycle,          zTrf,                          &
         atm_data_dir,   ocn_data_dir,    bgc_data_dir,                  &
         atm_data_format, ocn_data_format, rotate_wind,                  &
         oceanmixed_file
@@ -324,6 +329,12 @@
       nslyr = 0          ! number of vertical snow layers
       nblyr = 0          ! number of bio layers
 
+      rhos      = 330.0_dbl_kind   ! density of snow (kg/m^3)
+      rhoi      = 917.0_dbl_kind   ! density of ice (kg/m^3)
+      rhosi     = 940.0_dbl_kind   ! average sea ice density
+                                   ! Cox and Weeks, 1982: 919-974 kg/m^2
+      rhow      = 1026.0_dbl_kind  ! density of seawater (kg/m^3)
+      rhofresh  = 1000.0_dbl_kind  ! density of fresh water (kg/m^3)
       kitd = 1           ! type of itd conversions (0 = delta, 1 = linear)
       kcatbound = 1      ! category boundary formula (0 = old, 1 = new, etc)
       kdyn = 1           ! type of dynamics (-1, 0 = off, 1 = evp, 2 = eap, 3 = vp)
@@ -378,6 +389,8 @@
       shortwave = 'ccsm3'    ! 'ccsm3' or 'dEdd' (delta-Eddington)
       albedo_type = 'ccsm3'  ! 'ccsm3' or 'constant'
       ktherm = 1             ! -1 = OFF, 0 = 0-layer, 1 = BL99, 2 = mushy thermo
+      saltmax = 3.2_dbl_kind ! max salinity at ice base for BL99 (ppt)
+                             ! phi_init, dSin0_frazil are for mushy thermo
       conduct = 'bubbly'     ! 'MU71' or 'bubbly' (Pringle et al 2007)
       coriolis = 'latitude'  ! latitude dependent, or 'constant'
       ssh_stress = 'geostrophic'  ! 'geostrophic' or 'coupled'
@@ -389,6 +402,7 @@
       iceruf = 0.0005_dbl_kind ! ice surface roughness at atmosphere interface (m)
       iceruf_ocn = 0.03_dbl_kind ! under-ice roughness (m)
       calc_dragio = .false.  ! compute dragio from iceruf_ocn and thickness of first ocean level
+      zTrf = 2.0             ! reference height for {T,Q,U}ref (m)
       emissivity = 0.985     ! emissivity of snow and ice
       l_mpond_fresh = .false.     ! logical switch for including meltpond freshwater
                                   ! flux feedback to ocean model
@@ -533,6 +547,9 @@
             print*,'Reading tracer_nml'
                read(nu_nml, nml=tracer_nml,iostat=nml_error)
                if (nml_error /= 0) exit
+            print*,'Reading densities_nml'
+               read(nu_nml, nml=densities_nml,iostat=nml_error)
+               if (nml_error /= 0) exit
             print*,'Reading thermo_nml'
                read(nu_nml, nml=thermo_nml,iostat=nml_error)
                if (nml_error /= 0) exit
@@ -664,6 +681,11 @@
       call broadcast_scalar(bathymetry_format,    master_task)
       call broadcast_scalar(use_bathymetry,       master_task)
       call broadcast_scalar(kmt_file,             master_task)
+      call broadcast_scalar(rhos,                 master_task)
+      call broadcast_scalar(rhoi,                 master_task)
+      call broadcast_scalar(rhosi,                master_task)
+      call broadcast_scalar(rhow,                 master_task)
+      call broadcast_scalar(rhofresh,             master_task)
       call broadcast_scalar(kitd,                 master_task)
       call broadcast_scalar(kcatbound,            master_task)
       call broadcast_scalar(kdyn,                 master_task)
@@ -695,6 +717,7 @@
       call broadcast_scalar(shortwave,            master_task)
       call broadcast_scalar(albedo_type,          master_task)
       call broadcast_scalar(ktherm,               master_task)
+      call broadcast_scalar(saltmax,              master_task)
       call broadcast_scalar(coriolis,             master_task)
       call broadcast_scalar(ssh_stress,           master_task)
       call broadcast_scalar(kridge,               master_task)
@@ -759,6 +782,7 @@
       call broadcast_scalar(iceruf,               master_task)
       call broadcast_scalar(iceruf_ocn,           master_task)
       call broadcast_scalar(calc_dragio,          master_task)
+      call broadcast_scalar(zTrf,                 master_task)
       call broadcast_scalar(emissivity,           master_task)
       call broadcast_scalar(fbot_xfer_type,       master_task)
       call broadcast_scalar(precip_units,         master_task)
@@ -1455,9 +1479,10 @@
          if (ktherm >= 0) then
             write(nu_diag,1002) ' dt               = ', dt, ' : thermodynamic time step'
             write(nu_diag,1002) ' ksno             = ', ksno,' : snow thermal conductivity'
-            if (ktherm == 1) &
-            write(nu_diag,1030) ' conduct          = ', trim(conduct),' : ice thermal conductivity'
-            if (ktherm == 2) then
+            if (ktherm == 1) then
+               write(nu_diag,1030) ' conduct          = ', trim(conduct),' : ice thermal conductivity'
+               write(nu_diag,1002) ' saltmax          = ', saltmax, ' : max salinity at ice base'
+            elseif (ktherm == 2) then
                write(nu_diag,1002) ' a_rapid_mode     = ', a_rapid_mode,' : brine channel diameter'
                write(nu_diag,1002) ' Rac_rapid_mode   = ', Rac_rapid_mode,' : critical Rayleigh number'
                write(nu_diag,1002) ' aspect_rapid_mode= ', aspect_rapid_mode,' : brine convection aspect ratio'
@@ -1737,6 +1762,13 @@
 
          write(nu_diag,1011) ' conserv_check    = ', conserv_check
 
+         write(nu_diag,1002) ' rhos             = ', rhos
+         write(nu_diag,1002) ' rhoi             = ', rhoi
+         write(nu_diag,1002) ' rhosi            = ', rhosi
+         write(nu_diag,1002) ' rhow             = ', rhow
+         write(nu_diag,1002) ' rhofesh          = ', rhofresh
+
+         write(nu_diag,1002) ' zTrf             = ', zTrf
          write(nu_diag,1021) ' fyear_init       = ', fyear_init
          write(nu_diag,1021) ' ycycle           = ', ycycle
          write(nu_diag,1031) ' atm_data_type    = ', trim(atm_data_type)
@@ -1843,11 +1875,12 @@
 
       call icepack_init_parameters(ustar_min_in=ustar_min, albicev_in=albicev, albicei_in=albicei, &
          albsnowv_in=albsnowv, albsnowi_in=albsnowi, natmiter_in=natmiter, atmiter_conv_in=atmiter_conv, &
-         emissivity_in=emissivity, &
+         emissivity_in=emissivity, saltmax_in=saltmax, &
          ahmax_in=ahmax, shortwave_in=shortwave, albedo_type_in=albedo_type, R_ice_in=R_ice, R_pnd_in=R_pnd, &
          R_snw_in=R_snw, dT_mlt_in=dT_mlt, rsnw_mlt_in=rsnw_mlt, &
          kstrength_in=kstrength, krdg_partic_in=krdg_partic, krdg_redist_in=krdg_redist, mu_rdg_in=mu_rdg, &
          atmbndy_in=atmbndy, calc_strair_in=calc_strair, formdrag_in=formdrag, highfreq_in=highfreq, &
+         rhos_in=rhos, rhoi_in=rhoi, rhosi_in=rhosi, rhow_in=rhow, rhofresh_in=rhofresh, &
          kitd_in=kitd, kcatbound_in=kcatbound, hs0_in=hs0, dpscale_in=dpscale, frzpnd_in=frzpnd, &
          rfracmin_in=rfracmin, rfracmax_in=rfracmax, pndaspect_in=pndaspect, hs1_in=hs1, hp1_in=hp1, &
          ktherm_in=ktherm, calc_Tsfc_in=calc_Tsfc, conduct_in=conduct, &
@@ -1856,7 +1889,7 @@
          aspect_rapid_mode_in=aspect_rapid_mode, dSdt_slow_mode_in=dSdt_slow_mode, &
          phi_c_slow_mode_in=phi_c_slow_mode, phi_i_mushy_in=phi_i_mushy, conserv_check_in=conserv_check, &
          wave_spec_type_in = wave_spec_type, &
-         wave_spec_in=wave_spec, nfreq_in=nfreq, &
+         wave_spec_in=wave_spec, nfreq_in=nfreq, zTrf_in=zTrf, &
          tfrz_option_in=tfrz_option, kalg_in=kalg, fbot_xfer_type_in=fbot_xfer_type, &
          Pstar_in=Pstar, Cstar_in=Cstar, iceruf_in=iceruf, iceruf_ocn_in=iceruf_ocn, calc_dragio_in=calc_dragio, &
          sw_redist_in=sw_redist, sw_frac_in=sw_frac, sw_dtemp_in=sw_dtemp)
