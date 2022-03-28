@@ -121,6 +121,14 @@
     restart_fsd  = .false.
 /
 
+&densities_nml
+    rhos      = 330.0
+    rhoi      = 917.0
+    rhosi     = 940.0
+    rhow      = 1026.0
+    rhofresh  = 1000.0
+/
+
 &thermo_nml
     kitd              = 1
     ktherm            = 2
@@ -136,6 +144,7 @@
     Tliquidus_max     = -0.1d0
     hfrazilmin        = 0.05d0
     floediam          = 300.0d0
+    saltmax           = 3.2
 /
 
 &dynamics_nml
@@ -254,6 +263,7 @@
     iceruf          = 0.0005
     calc_dragio     = .false.
     iceruf_ocn      = 0.03
+    zTrf            = 2.0
     emissivity      = 0.985
     fbot_xfer_type  = 'constant'
     update_ocn_f    = .false.
