@@ -144,6 +144,7 @@
     Tliquidus_max     = -0.1d0
     hfrazilmin        = 0.05d0
     floediam          = 300.0d0
+    saltmax           = 3.2
 /
 
 &dynamics_nml
