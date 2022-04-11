@@ -143,12 +143,14 @@
           daidtt, daidtd, dvidtt, dvidtd, dagedtt, dagedtd
       use ice_history, only: accum_hist
       use ice_history_bgc, only: init_history_bgc
+      use ice_init_column, only: init_shortwave
       use ice_restart, only: final_restart
       use ice_restart_column, only: write_restart_age, write_restart_FY, &
           write_restart_lvl, write_restart_pond_cesm, write_restart_pond_lvl, &
           write_restart_pond_topo, write_restart_aero, write_restart_fsd, &
           write_restart_bgc, write_restart_hbrine
       use ice_restart_driver, only: dumpfile
+      use ice_restart_shared, only: restart, runtype
       use ice_restoring, only: restore_ice, ice_HaloRestore
       use ice_state, only: trcrn
       use ice_step_mod, only: prep_radiation, step_therm1, step_therm2, &
@@ -169,7 +171,8 @@
       logical (kind=log_kind) :: &
           tr_iage, tr_FY, tr_lvl, tr_fsd, &
           tr_pond_cesm, tr_pond_lvl, tr_pond_topo, tr_brine, tr_aero, &
-          calc_Tsfc, skl_bgc, solve_zsal, z_tracers, wave_spec
+          calc_Tsfc, skl_bgc, solve_zsal, z_tracers, wave_spec, &
+          scale_sw
 
       character(len=*), parameter :: subname = '(ice_step)'
 
@@ -196,6 +199,13 @@
       !-----------------------------------------------------------------
 
          if (restore_ice) call ice_HaloRestore
+
+       !---------------------------------------------------------------
+       ! 1st time step: initialize shortwave again (with correct forcing)
+       !---------------------------------------------------------------
+
+         if (istep == 1 .and. runtype == 'initial' .and. .not. restart) &
+            call init_shortwave
 
       !-----------------------------------------------------------------
       ! initialize diagnostics and save initial state values
