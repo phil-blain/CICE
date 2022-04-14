@@ -1,0 +1,6 @@
+name: cice
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - tcsh
