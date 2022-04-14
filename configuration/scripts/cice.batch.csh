@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/usr/bin/env -S tcsh -f
 
 if ( $1 != "" ) then
   echo "running cice.batch.csh (creating ${1})"
@@ -52,7 +52,7 @@ set shortcase = `echo ${ICE_CASENAME} | cut -c1-15`
 #==========================================
 
 cat >! ${jobfile} << EOF0
-#!/bin/tcsh -f 
+#!/usr/bin/env -S tcsh -f 
 EOF0
 
 #==========================================
@@ -354,6 +354,15 @@ cat >> ${jobfile} << EOFB
 # nothing to do
 EOFB
 
+
+else if (${ICE_MACHINE} =~ devcloud*) then
+cat >> ${jobfile} << EOFB
+#PBS -N ${ICE_CASENAME}
+#PBS -j oe
+#PBS -l select=${nnodes}:ncpus=${corespernode}:mpiprocs=${taskpernodelimit}:ompthreads=${nthrds}:mem=20gb
+#PBS -l walltime=${batchtime}
+#PBS -W umask=022
+EOFB
 
 else
   echo "${0} ERROR: ${ICE_MACHINE} unknown"

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/usr/bin/env -S tcsh -f
 
 # Compare the binary files 
 #-----------------------------------------------------------

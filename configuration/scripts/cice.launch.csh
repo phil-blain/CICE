@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/usr/bin/env -S tcsh -f
 
 #echo ${0}
 echo "running cice.launch.csh"
@@ -256,7 +256,7 @@ endif
 #EOFR
 
 #=======
-else if (${ICE_MACHINE} =~ conda*) then
+else if (${ICE_MACHINE} =~ conda* || ${ICE_MACHINE} =~ devcloud*) then
 if (${ICE_COMMDIR} =~ serial*) then
 cat >> ${jobfile} << EOFR
 ./cice >&! \$ICE_RUNLOG_FILE

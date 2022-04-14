@@ -1,4 +1,4 @@
-#! /bin/tcsh -f
+#!/usr/bin/env -S tcsh -f
 
 #====================================
 # If the cice binary is passed via the --exe argument and the file exists,
