@@ -1,3 +1,3 @@
 [submodule "icepack"]
 	path = icepack
-	url = https://github.com/cice-consortium/icepack
+	url = https://gitlab.science.gc.ca/concepts/Icepack.git
