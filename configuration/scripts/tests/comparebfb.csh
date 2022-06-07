@@ -64,15 +64,19 @@ if ($filearg == 1) then
   endif
 
 else
+  set test_dir_hist = "${test_dir}/../history"
   set end_date = `ls -t1 $test_dir | head -1 | sed 's|^.*\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9]\).*|\1|'`
+  set test_file_hist = `cd $test_dir_hist && find . -maxdepth 1 -regextype egrep -regex '.*/iceh(_inst)?\..*' -exec ls -1t {} +|head -1`
   # set nonomatch so that if foreach does not find anything it does not end the script
   set nonomatch
   foreach test_data (${test_dir}/iced*${end_date}*)
     set test_file = "${test_data:t}"
+    set test_data_hist =  "${test_dir}/../history/${test_file_hist}"
     if ($restart == 1) then
       set base_data = ${base_dir}/base_${test_file}
     else
       set base_data = ${base_dir}/${test_file}
+      set base_data_hist = "${base_dir}/../history/${test_file_hist}"
     endif
     echo "base_data: ${base_data}"
     echo "test_data: ${test_data}"
@@ -81,6 +85,7 @@ else
         echo "  compare OK"
       else
         set failure = 1
+        conda run -n nco ncdiff -O $base_data_hist $test_data_hist $test_dir_hist/diff.nc
         echo "  compare FAIL"
       endif
     else
