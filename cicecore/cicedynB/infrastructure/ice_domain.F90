@@ -500,9 +500,17 @@
       nocn = 0
       do n=1,nblocks_tot
          this_block = get_block(n,n)
+#ifdef CICE_IN_NEMO
+         do j=1,ny_block
+#else
          do j=this_block%jlo,this_block%jhi
+#endif
             if (this_block%j_glob(j) > 0) then
+#ifdef CICE_IN_NEMO
+               do i=1,nx_block
+#else
                do i=this_block%ilo,this_block%ihi
+#endif
                   if (this_block%i_glob(i) > 0) then
                      ig = this_block%i_glob(i)
                      jg = this_block%j_glob(j)
@@ -522,13 +530,8 @@
          ! use processor_shape = 'square-pop' and distribution_wght = 'block' 
          ! to make CICE and POP decompositions/distributions identical.
 
-#ifdef CICE_IN_NEMO
-         ! Keep all blocks even the ones only containing land points
-         if (distribution_wght == 'block') nocn(n) = nx_block*ny_block
-#else
          if (distribution_wght == 'block' .and. nocn(n) > 0) nocn(n) = nx_block*ny_block
          if (.not. landblockelim) nocn(n) = max(nocn(n),1)
-#endif
       end do
    endif  ! distribution_wght = file
 
