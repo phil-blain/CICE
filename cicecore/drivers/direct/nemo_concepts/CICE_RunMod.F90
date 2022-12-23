@@ -159,6 +159,7 @@
       use ice_timers, only: ice_timer_start, ice_timer_stop, &
           timer_diags, timer_column, timer_thermo, timer_bound, &
           timer_hist, timer_readwrite
+      use ice_nemo_concepts, only: diagnostic_wind_components
 
       integer (kind=int_kind) :: &
          iblk        , & ! block index 
@@ -247,6 +248,13 @@
          ! clean up, update tendency diagnostics
          offset = dt
          call update_state (dt, daidtt, dvidtt, dagedtt, offset)
+
+         ! compute components of diagnostic wind
+         !$OMP PARALLEL DO PRIVATE(iblk)
+         do iblk = 1, nblocks
+            call diagnostic_wind_components(iblk)
+         enddo ! iblk
+         !$OMP END PARALLEL DO
 
          call ice_timer_stop(timer_thermo) ! thermodynamics
          call ice_timer_stop(timer_column) ! column physics
