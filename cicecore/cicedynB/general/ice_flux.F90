@@ -223,7 +223,9 @@
          fswthru_vdr , & ! vis dir shortwave penetrating to ocean (W/m^2)
          fswthru_vdf , & ! vis dif shortwave penetrating to ocean (W/m^2)
          fswthru_idr , & ! nir dir shortwave penetrating to ocean (W/m^2)
-         fswthru_idf     ! nir dif shortwave penetrating to ocean (W/m^2)
+         fswthru_idf , & ! nir dif shortwave penetrating to ocean (W/m^2)
+         dragiou     ! effective forward drag (vrel * cosw) for
+                     ! computing implicit drag in the ocean model (m/s)
 
        ! internal
 
@@ -455,6 +457,7 @@
          fswthru_vdf (nx_block,ny_block,max_blocks), & ! vis dif shortwave penetrating to ocean (W/m^2)
          fswthru_idr (nx_block,ny_block,max_blocks), & ! nir dir shortwave penetrating to ocean (W/m^2)
          fswthru_idf (nx_block,ny_block,max_blocks), & ! nir dif shortwave penetrating to ocean (W/m^2)
+         dragiou    (nx_block,ny_block,max_blocks), & ! effective forward ice-ocean drag (m/s)
          scale_factor (nx_block,ny_block,max_blocks), & ! scaling factor for shortwave components
          strairx_ocn(nx_block,ny_block,max_blocks), & ! stress on ocean by air, x-direction
          strairy_ocn(nx_block,ny_block,max_blocks), & ! stress on ocean by air, y-direction
@@ -706,6 +709,7 @@
       fswthru_vdf (:,:,:) = c0
       fswthru_idr (:,:,:) = c0
       fswthru_idf (:,:,:) = c0
+      dragiou (:,:,:) = c0
       fresh_da(:,:,:) = c0    ! data assimilation
       fsalt_da(:,:,:) = c0
       flux_bio (:,:,:,:) = c0 ! bgc
