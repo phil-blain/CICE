@@ -1247,7 +1247,8 @@
                              uvel,     vvel,     &
                              uocn,     vocn,     &
                              aiX,      fm,       &
-                             strocnx,  strocny)
+                             strocnx,  strocny,  &
+                             dragiou)
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -1267,7 +1268,8 @@
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(inout) :: &
          strocnx , & ! ice-ocean stress, x-direction
-         strocny     ! ice-ocean stress, y-direction
+         strocny , & ! ice-ocean stress, y-direction
+         dragiou     ! effective ice-ocean forward drag
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(in) :: &
          Cw          ! ocean-ice neutral drag coefficient
@@ -1312,6 +1314,9 @@
          ! the sign is reversed later, therefore negative here
 !         strocnx(i,j) = -(strairx(i,j) + strintx(i,j))
 !         strocny(i,j) = -(strairy(i,j) + strinty(i,j))
+
+         ! Compute effective forward drag
+         dragiou(i,j) = vrel * cosw          
 
       enddo
 
