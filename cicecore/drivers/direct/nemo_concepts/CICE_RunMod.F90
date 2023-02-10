@@ -80,6 +80,11 @@
       timeLoop: do
 #endif
 
+         call ice_timer_start(timer_couple)  ! atm/ocn coupling
+         call init_flux_atm     ! initialize atmosphere fluxes sent to coupler
+         call init_flux_ocn     ! initialize ocean fluxes sent to coupler
+         call ice_timer_stop(timer_couple)    ! atm/ocn coupling
+
          call ice_step
 
          call advance_timestep()     ! advance time
@@ -104,9 +109,6 @@
 !         if (skl_bgc .or. z_tracers) call get_forcing_bgc  ! biogeochemistry
 
          if (z_tracers) call get_atm_bgc                   ! biogeochemistry
-
-         call init_flux_atm     ! initialize atmosphere fluxes sent to coupler
-         call init_flux_ocn     ! initialize ocean fluxes sent to coupler
 
          call ice_timer_stop(timer_couple)    ! atm/ocn coupling
 
