@@ -959,7 +959,7 @@
              "sig2 is instantaneous", c1, c0,                  &
              ns1, f_sig2)
              
-         call define_hist_field(n_sigP,"sigP","1",ustr2D, ucstr, &
+         call define_hist_field(n_sigP,"sigP","N/m",ustr2D, ucstr, &
              "ice pressure",                       &
              "sigP is instantaneous", c1, c0,                  &
              ns1, f_sigP)
