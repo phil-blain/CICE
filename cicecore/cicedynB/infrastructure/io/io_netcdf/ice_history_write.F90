@@ -155,7 +155,7 @@
       ! define dimensions
       !-----------------------------------------------------------------
 
-        if (hist_avg) then
+        if (hist_avg .and. .not. write_ic) then
           status = nf90_def_dim(ncid,'d2',2,boundid)
           if (status /= nf90_noerr) call abort_ice(subname// &
              'ERROR: defining dim d2')
@@ -237,7 +237,7 @@
            call abort_ice(subname//'ERROR: invalid calendar settings')
         endif
 
-        if (hist_avg) then
+        if (hist_avg .and. .not. write_ic) then
           status = nf90_put_att(ncid,varid,'bounds','time_bounds')
           if (status /= nf90_noerr) call abort_ice(subname// &
                       'ERROR: time bounds')
@@ -247,7 +247,7 @@
       ! Define attributes for time bounds if hist_avg is true
       !-----------------------------------------------------------------
 
-        if (hist_avg) then
+        if (hist_avg .and. .not. write_ic) then
           dimid(1) = boundid
           dimid(2) = timid
           status = nf90_def_var(ncid,'time_bounds',lprecision,dimid(1:2),varid)
@@ -563,7 +563,7 @@
       !-----------------------------------------------------------------
       ! Add cell_methods attribute to variables if averaged
       !-----------------------------------------------------------------
-            if (hist_avg) then
+            if (hist_avg .and. .not. write_ic) then
               if (TRIM(avail_hist_fields(n)%vname)/='sig1' &
               .or.TRIM(avail_hist_fields(n)%vname)/='sig2' & 
               .or.TRIM(avail_hist_fields(n)%vname)/='sistreave' & 
@@ -576,6 +576,7 @@
             endif
 
             if (histfreq(ns) == '1' .or. .not. hist_avg         &
+                .or. write_ic                                   &
                 .or. n==n_divu(ns)      .or. n==n_shear(ns)     &  ! snapshots
                 .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &
                 .or. n==n_sigP(ns)      .or. n==n_trsig(ns)     &
@@ -634,13 +635,13 @@
       !-----------------------------------------------------------------
       ! Add cell_methods attribute to variables if averaged
       !-----------------------------------------------------------------
-            if (hist_avg) then
+            if (hist_avg .and. .not. write_ic) then
                 status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice(subname// &
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -875,13 +876,13 @@
       !-----------------------------------------------------------------
       ! Add cell_methods attribute to variables if averaged
       !-----------------------------------------------------------------
-            if (hist_avg) then
+            if (hist_avg .and. .not. write_ic) then
                 status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice(subname// &
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -936,13 +937,13 @@
       !-----------------------------------------------------------------
       ! Add cell_methods attribute to variables if averaged
       !-----------------------------------------------------------------
-            if (hist_avg) then
+            if (hist_avg .and. .not. write_ic) then
                 status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice(subname// &
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -997,13 +998,13 @@
       !-----------------------------------------------------------------
       ! Add cell_methods attribute to variables if averaged
       !-----------------------------------------------------------------
-            if (hist_avg) then
+            if (hist_avg .and. .not. write_ic) then
                 status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice(subname// &
                  'ERROR: defining cell methods for '//avail_hist_fields(n)%vname)
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = nf90_put_att(ncid,varid,'time_rep','instantaneous')
             else
                status = nf90_put_att(ncid,varid,'time_rep','averaged')
@@ -1098,7 +1099,7 @@
       ! write time_bounds info
       !-----------------------------------------------------------------
 
-        if (hist_avg) then
+        if (hist_avg .and. .not. write_ic) then
           status = nf90_inq_varid(ncid,'time_bounds',varid)
           if (status /= nf90_noerr) call abort_ice(subname// &
                         'ERROR: getting time_bounds id')
