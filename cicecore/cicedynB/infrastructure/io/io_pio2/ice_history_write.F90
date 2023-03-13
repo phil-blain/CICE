@@ -186,7 +186,7 @@
       ! define dimensions
       !-----------------------------------------------------------------
 
-       if (hist_avg .and. histfreq(ns) /= '1') then
+       if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
           status = pio_def_dim(File,'d2',2,boundid)
         endif
 
@@ -224,12 +224,12 @@
            call abort_ice(subname//'ERROR: invalid calendar settings')
         endif
 
-        if (hist_avg .and. histfreq(ns) /= '1') then
+        if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
           status = pio_put_att(File,varid,'bounds','time_bounds')
         endif
 
         ! Define attributes for time_bounds if hist_avg is true
-        if (hist_avg .and. histfreq(ns) /= '1') then
+        if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
           dimid2(1) = boundid
           dimid2(2) = timid
 !sgl          status = pio_def_var(File,'time_bounds',pio_real,dimid2,varid)
@@ -473,7 +473,7 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
               if (TRIM(avail_hist_fields(n)%vname)/='sig1' &
               .or.TRIM(avail_hist_fields(n)%vname)/='sig2' &
               .or.TRIM(avail_hist_fields(n)%vname)/='sistreave' &
@@ -484,6 +484,7 @@
             endif
 
             if (histfreq(ns) == '1' .or. .not. hist_avg         &
+                .or. write_ic                                   &
                 .or. n==n_divu(ns)      .or. n==n_shear(ns)     &  ! snapshots
                 .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &
                 .or. n==n_sigP(ns)      .or. n==n_trsig(ns)     &
@@ -527,11 +528,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -569,11 +570,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -611,11 +612,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -653,11 +654,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -695,11 +696,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -743,11 +744,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -786,11 +787,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -830,11 +831,11 @@
             endif
 
             ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
+            if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
                 status = pio_put_att(File,varid,'cell_methods','time: mean')
             endif
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
+            if (histfreq(ns) == '1' .or. .not. hist_avg .or. write_ic) then
                status = pio_put_att(File,varid,'time_rep','instantaneous')
             else
                status = pio_put_att(File,varid,'time_rep','averaged')
@@ -908,7 +909,7 @@
       ! write time_bounds info
       !-----------------------------------------------------------------
 
-        if (hist_avg .and. histfreq(ns) /= '1') then
+        if (hist_avg .and. histfreq(ns) /= '1' .and. .not. write_ic) then
           status = pio_inq_varid(File,'time_bounds',varid)
           time_bounds=(/time_beg(ns),time_end(ns)/)
           bnd_start  = (/1,1/)
