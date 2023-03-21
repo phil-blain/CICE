@@ -90,6 +90,7 @@
       use ice_timers, only: timer_total, init_ice_timers, ice_timer_start
       use ice_transport_driver, only: init_transport
       use lib_mpp, only:   mpi_comm_opa      ! NEMO MPI communicator
+      use ice_nemo_concepts, only: alloc_nemo_concepts
 
       logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
          tr_fsd, wave_spec
@@ -114,6 +115,7 @@
       call alloc_state          ! allocate state
       call alloc_flux_bgc       ! allocate flux_bgc
       call alloc_flux           ! allocate flux
+      call alloc_nemo_concepts  ! allocate nemo/concepts arrays
       call init_ice_timers      ! initialize all timers
       call ice_timer_start(timer_total)   ! start timing entire run
       call init_grid2           ! grid variables

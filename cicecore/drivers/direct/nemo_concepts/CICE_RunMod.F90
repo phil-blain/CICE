@@ -159,6 +159,7 @@
       use ice_timers, only: ice_timer_start, ice_timer_stop, &
           timer_diags, timer_column, timer_thermo, timer_bound, &
           timer_hist, timer_readwrite
+      use ice_nemo_concepts, only: diagnostic_wind_components
 
       integer (kind=int_kind) :: &
          iblk        , & ! block index
@@ -294,6 +295,9 @@
 
             call coupling_prep (iblk)
 
+            ! compute components of diagnostic wind
+            call diagnostic_wind_components(iblk)
+
          enddo ! iblk
          !$OMP END PARALLEL DO
 
@@ -364,7 +368,7 @@
           fswthru_ai, fhocn, fswthru, scale_factor, snowfrac, &
           fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf, &
           swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
-          fsens, flat, fswabs, flwout, evap, Tref, Qref, &
+          fsens, flat, fswabs, flwout, evap, Tref, Qref, Uref, &
           fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt
       use ice_flux_bgc, only: faero_ocn, fzsal_ai, fzsal_g_ai, flux_bio, flux_bio_ai
       use ice_grid, only: tmask
@@ -561,8 +565,9 @@
                             alvdr    (:,:,iblk), alidr   (:,:,iblk), &
                             alvdf    (:,:,iblk), alidf   (:,:,iblk), &
                             fzsal    (:,:,iblk), fzsal_g (:,:,iblk), &
-                            flux_bio(:,:,1:nbtrcr,iblk))
-
+                            flux_bio(:,:,1:nbtrcr,iblk),             &
+                            Uref=Uref(:,:,iblk))
+ 
 !echmod - comment this out for efficiency, if .not. calc_Tsfc
          if (.not. calc_Tsfc) then
 
