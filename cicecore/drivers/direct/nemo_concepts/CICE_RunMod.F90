@@ -368,7 +368,7 @@
           fswthru_ai, fhocn, fswthru, scale_factor, snowfrac, &
           fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf, &
           swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
-          fsens, flat, fswabs, flwout, evap, Tref, Qref, Uref, &
+          fsens, flat, fswabs, flwout, evap, Tref, Qref, Uref, Qsur, &
           fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt
       use ice_flux_bgc, only: faero_ocn, fzsal_ai, fzsal_g_ai, flux_bio, flux_bio_ai
       use ice_grid, only: tmask
@@ -566,7 +566,7 @@
                             alvdf    (:,:,iblk), alidf   (:,:,iblk), &
                             fzsal    (:,:,iblk), fzsal_g (:,:,iblk), &
                             flux_bio(:,:,1:nbtrcr,iblk),             &
-                            Uref=Uref(:,:,iblk))
+                            Uref=Uref(:,:,iblk), Qsur=Qsur(:,:,iblk))
  
 !echmod - comment this out for efficiency, if .not. calc_Tsfc
          if (.not. calc_Tsfc) then
