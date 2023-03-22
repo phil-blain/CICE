@@ -235,7 +235,7 @@
           fswthru, fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf, &
           meltt, melts, meltb, congel, snoice, &
           flatn_f, fsensn_f, fsurfn_f, fcondtopn_f, &
-          send_i2x_per_cat, fswthrun_ai, dsnow, Qsur
+          send_i2x_per_cat, fswthrun_ai, dsnow, Qsur, ilmo
       use ice_flux_bgc, only: dsnown, faero_atm, faero_ocn, fiso_atm, fiso_ocn, &
           Qa_iso, Qref_iso, fiso_evap, HDO_ocn, H2_16O_ocn, H2_18O_ocn
       use ice_grid, only: lmask_n, lmask_s, tmask
@@ -436,6 +436,7 @@
                       Qref_iso     = Qref_iso    (i,j,:,iblk), &
                       Qsur         = Qsur        (i,j,  iblk), &
                       Uref         = Uref        (i,j,  iblk), &
+                      ilmo         = ilmo        (i,j,  iblk), &
                       Cdn_atm_ratio= Cdn_atm_ratio(i,j, iblk), &
                       Cdn_ocn      = Cdn_ocn     (i,j,  iblk), &
                       Cdn_ocn_skin = Cdn_ocn_skin(i,j,  iblk), &
