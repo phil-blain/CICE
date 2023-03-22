@@ -180,6 +180,7 @@
          Qref    , & ! 2m atm reference spec humidity (kg/kg)
          Uref    , & ! 10m atm reference wind speed (m/s)
          Qsur    , & ! surface specific humidity (kg/kg)
+         ilmo    , & ! inverse Obukhov lengthscale (1/m)
          evap    , & ! evaporative water flux (kg/m^2/s)
          evaps   , & ! evaporative water flux over snow (kg/m^2/s)
          evapi       ! evaporative water flux over ice (kg/m^2/s)
@@ -396,6 +397,7 @@
          zlvl       (nx_block,ny_block,max_blocks), & ! atm level height (momentum) (m)
          zlvs       (nx_block,ny_block,max_blocks), & ! atm level height (scalar quantities) (m)
          Qsur       (nx_block,ny_block,max_blocks), & ! surface specific humidity (kg/kg)
+         ilmo       (nx_block,ny_block,max_blocks), & ! inverse Obukhov lengthscale (1/m)
          uatm       (nx_block,ny_block,max_blocks), & ! wind velocity components (m/s)
          vatm       (nx_block,ny_block,max_blocks), &
          wind       (nx_block,ny_block,max_blocks), & ! wind speed (m/s)
@@ -686,6 +688,7 @@
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
       Qsur    (:,:,:) = c0            ! surface specific humidity (kg/kg)
+      ilmo    (:,:,:) = c1            ! inverse Obukhov lengthscale (1/m)
       alvdr   (:,:,:) = c0
       alidr   (:,:,:) = c0
       alvdf   (:,:,:) = c0
