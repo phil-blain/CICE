@@ -179,6 +179,7 @@
          Tref    , & ! 2m atm reference temperature (K)
          Qref    , & ! 2m atm reference spec humidity (kg/kg)
          Uref    , & ! 10m atm reference wind speed (m/s)
+         Qsur    , & ! surface specific humidity (kg/kg)
          evap    , & ! evaporative water flux (kg/m^2/s)
          evaps   , & ! evaporative water flux over snow (kg/m^2/s)
          evapi       ! evaporative water flux over ice (kg/m^2/s)
@@ -394,6 +395,7 @@
          Tbu        (nx_block,ny_block,max_blocks), & ! factor for seabed stress (landfast ice)
          zlvl       (nx_block,ny_block,max_blocks), & ! atm level height (momentum) (m)
          zlvs       (nx_block,ny_block,max_blocks), & ! atm level height (scalar quantities) (m)
+         Qsur       (nx_block,ny_block,max_blocks), & ! surface specific humidity (kg/kg)
          uatm       (nx_block,ny_block,max_blocks), & ! wind velocity components (m/s)
          vatm       (nx_block,ny_block,max_blocks), &
          wind       (nx_block,ny_block,max_blocks), & ! wind speed (m/s)
@@ -683,6 +685,7 @@
       Tref    (:,:,:) = c0
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
+      Qsur    (:,:,:) = c0            ! surface specific humidity (kg/kg)
       alvdr   (:,:,:) = c0
       alidr   (:,:,:) = c0
       alvdf   (:,:,:) = c0
