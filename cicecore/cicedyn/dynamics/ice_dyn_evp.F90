@@ -265,7 +265,7 @@
           strairxU, strairyU, uocn, vocn, ss_tltx, ss_tlty, fmU, &
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
           strax, stray, &
-          TbU, hwater, &
+          TbU, hwater, dragiouU, dragiouN, dragiouE, &
           strairxN, strairyN, fmN, &
           strtltxN, strtltyN, strocnxN, strocnyN, strintxN, strintyN, taubxN, taubyN, &
           TbN, &
@@ -1396,7 +1396,8 @@
                uvel    (:,:,iblk), vvel    (:,:,iblk), &
                uocnU   (:,:,iblk), vocnU   (:,:,iblk), &
                aiU     (:,:,iblk), fmU     (:,:,iblk), &
-               strocnxU(:,:,iblk), strocnyU(:,:,iblk))
+               strocnxU(:,:,iblk), strocnyU(:,:,iblk), &
+               dragiouU(:,:,iblk))
       enddo
       !$OMP END PARALLEL DO
 
@@ -1412,7 +1413,8 @@
                   uvelN   (:,:,iblk), vvelN   (:,:,iblk), &
                   uocnN   (:,:,iblk), vocnN   (:,:,iblk), &
                   aiN     (:,:,iblk), fmN     (:,:,iblk), &
-                  strocnxN(:,:,iblk), strocnyN(:,:,iblk))
+                  strocnxN(:,:,iblk), strocnyN(:,:,iblk), &
+                  dragiouN(:,:,iblk))
 
             call dyn_finish                               &
                  (nx_block          , ny_block          , &
@@ -1421,7 +1423,8 @@
                   uvelE   (:,:,iblk), vvelE   (:,:,iblk), &
                   uocnE   (:,:,iblk), vocnE   (:,:,iblk), &
                   aiE     (:,:,iblk), fmE     (:,:,iblk), &
-                  strocnxE(:,:,iblk), strocnyE(:,:,iblk))
+                  strocnxE(:,:,iblk), strocnyE(:,:,iblk), &
+                  dragiouE(:,:,iblk))
 
          enddo
          !$OMP END PARALLEL DO

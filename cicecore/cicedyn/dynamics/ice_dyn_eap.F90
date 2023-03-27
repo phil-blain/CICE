@@ -114,7 +114,7 @@
           strairxU, strairyU, uocn, vocn, ss_tltx, ss_tlty, fmU, &
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
           strax, stray, &
-          TbU, hwater, &
+          TbU, hwater, dragiouU, &
           stressp_1, stressp_2, stressp_3, stressp_4, &
           stressm_1, stressm_2, stressm_3, stressm_4, &
           stress12_1, stress12_2, stress12_3, stress12_4
@@ -539,7 +539,8 @@
                uvel    (:,:,iblk), vvel    (:,:,iblk), &
                uocnU   (:,:,iblk), vocnU   (:,:,iblk), &
                aiU     (:,:,iblk), fmU     (:,:,iblk), &
-               strocnxU(:,:,iblk), strocnyU(:,:,iblk))
+               strocnxU(:,:,iblk), strocnyU(:,:,iblk), &
+               dragiouU(:,:,iblk))
 
       enddo
       !$OMP END PARALLEL DO
