@@ -783,6 +783,7 @@
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
       Qsur    (:,:,:) = c0
+      ilmo    (:,:,:) = c1
 
       fiso_evap(:,:,:,:) = c0
       Qref_iso (:,:,:,:) = c0
@@ -1028,7 +1029,7 @@
                                flux_bio,           &
                                fsurf,    fcondtop, &
                                Uref,     wind,     &
-                               Qsur,               &
+                               Qsur,     ilmo,     &
                                Qref_iso,           &
                                fiso_evap,fiso_ocn)
 
@@ -1077,7 +1078,8 @@
 
       real (kind=dbl_kind), dimension(nx_block,ny_block), optional, intent(inout) :: &
           Uref    , & ! air speed reference level       (m/s)
-          Qsur        ! surface specific humidity       (kg/kg)
+          Qsur    , & ! surface specific humidity       (kg/kg)
+          ilmo        ! inverse Obukhov lengthscale     (1/m)
 
       real (kind=dbl_kind), dimension(nx_block,ny_block,nbtrcr), intent(inout) :: &
           flux_bio    ! tracer flux to ocean from biology (mmol/m2/s)
@@ -1137,6 +1139,8 @@
                Uref (i,j) = Uref    (i,j) * ar
             if (present(Qsur)) &
                Qsur (i,j) = Qsur    (i,j) * ar
+            if (present(ilmo)) &
+               ilmo (i,j) = ilmo    (i,j) * ar
             fresh   (i,j) = fresh   (i,j) * ar
             fsalt   (i,j) = fsalt   (i,j) * ar
             fhocn   (i,j) = fhocn   (i,j) * ar
@@ -1171,6 +1175,8 @@
                Uref (i,j) = wind(i,j)
             if (present(Qsur)) &
                Qsur (i,j) = c0
+            if (present(ilmo)) &
+               ilmo (i,j) = c0
             fresh   (i,j) = c0
             fsalt   (i,j) = c0
             fhocn   (i,j) = c0
