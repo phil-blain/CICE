@@ -769,7 +769,8 @@
                              strintx,  strinty,  &
                              strairx,  strairy,  &
                              strocnx,  strocny,  &
-                             strocnxT, strocnyT) 
+                             strocnxT, strocnyT, &
+                             dragiou)
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -797,7 +798,8 @@
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(out) :: &
          strocnxT, & ! ice-ocean stress, x-direction
-         strocnyT    ! ice-ocean stress, y-direction
+         strocnyT, & ! ice-ocean stress, y-direction
+         dragiou     ! effective ice-ocean forward drag
 
       ! local variables
 
@@ -819,6 +821,7 @@
       do i = 1, nx_block
          strocnxT(i,j) = c0
          strocnyT(i,j) = c0
+         dragiou(i,j)  = c0
       enddo
       enddo
 
@@ -851,6 +854,9 @@
          ! divide by aice for coupling
          strocnxT(i,j) = strocnx(i,j) / aiu(i,j)
          strocnyT(i,j) = strocny(i,j) / aiu(i,j)
+
+         ! Compute effective forward drag
+         dragiou(i,j) = vrel * cosw
       enddo
 
       end subroutine dyn_finish
