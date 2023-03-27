@@ -224,7 +224,9 @@
          fswthru_vdr , & ! vis dir shortwave penetrating to ocean (W/m^2)
          fswthru_vdf , & ! vis dif shortwave penetrating to ocean (W/m^2)
          fswthru_idr , & ! nir dir shortwave penetrating to ocean (W/m^2)
-         fswthru_idf     ! nir dif shortwave penetrating to ocean (W/m^2)
+         fswthru_idf , & ! nir dif shortwave penetrating to ocean (W/m^2)
+         dragiou     ! effective forward drag (vrel * cosw) for
+                     ! computing implicit drag in the ocean model (m/s)
 
        ! internal
 
@@ -457,6 +459,7 @@
          fswthru_vdf (nx_block,ny_block,max_blocks), & ! vis dif shortwave penetrating to ocean (W/m^2)
          fswthru_idr (nx_block,ny_block,max_blocks), & ! nir dir shortwave penetrating to ocean (W/m^2)
          fswthru_idf (nx_block,ny_block,max_blocks), & ! nir dif shortwave penetrating to ocean (W/m^2)
+         dragiou    (nx_block,ny_block,max_blocks), & ! effective forward ice-ocean drag (m/s)
          scale_factor (nx_block,ny_block,max_blocks), & ! scaling factor for shortwave components
          strairx_ocn(nx_block,ny_block,max_blocks), & ! stress on ocean by air, x-direction
          strairy_ocn(nx_block,ny_block,max_blocks), & ! stress on ocean by air, y-direction
@@ -709,6 +712,7 @@
       fswthru_vdf (:,:,:) = c0
       fswthru_idr (:,:,:) = c0
       fswthru_idf (:,:,:) = c0
+      dragiou (:,:,:) = c0
       fresh_da(:,:,:) = c0    ! data assimilation
       fsalt_da(:,:,:) = c0
       flux_bio (:,:,:,:) = c0 ! bgc
@@ -778,6 +782,7 @@
       Tref    (:,:,:) = c0
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
+      Qsur    (:,:,:) = c0
 
       fiso_evap(:,:,:,:) = c0
       Qref_iso (:,:,:,:) = c0
@@ -1023,6 +1028,7 @@
                                flux_bio,           &
                                fsurf,    fcondtop, &
                                Uref,     wind,     &
+                               Qsur,               &
                                Qref_iso,           &
                                fiso_evap,fiso_ocn)
 
@@ -1070,7 +1076,8 @@
           alidf       ! near-ir, diffuse  (fraction)
 
       real (kind=dbl_kind), dimension(nx_block,ny_block), optional, intent(inout) :: &
-          Uref        ! air speed reference level       (m/s)
+          Uref    , & ! air speed reference level       (m/s)
+          Qsur        ! surface specific humidity       (kg/kg)
 
       real (kind=dbl_kind), dimension(nx_block,ny_block,nbtrcr), intent(inout) :: &
           flux_bio    ! tracer flux to ocean from biology (mmol/m2/s)
@@ -1128,6 +1135,8 @@
             Qref    (i,j) = Qref    (i,j) * ar
             if (present(Uref)) &
                Uref (i,j) = Uref    (i,j) * ar
+            if (present(Qsur)) &
+               Qsur (i,j) = Qsur    (i,j) * ar
             fresh   (i,j) = fresh   (i,j) * ar
             fsalt   (i,j) = fsalt   (i,j) * ar
             fhocn   (i,j) = fhocn   (i,j) * ar
@@ -1160,6 +1169,8 @@
             Qref    (i,j) = Qa  (i,j)
             if (present(Uref) .and. present(wind)) &
                Uref (i,j) = wind(i,j)
+            if (present(Qsur)) &
+               Qsur (i,j) = c0
             fresh   (i,j) = c0
             fsalt   (i,j) = c0
             fhocn   (i,j) = c0
