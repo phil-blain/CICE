@@ -32,6 +32,8 @@
 
 !  This routine aborts the ice model and prints an error message.
 
+      use ifport
+
       character (len=*), intent(in),optional :: error_message  ! error message
       character (len=*), intent(in),optional :: file           ! file
       integer (kind=int_kind), intent(in), optional :: line    ! line number
@@ -43,6 +45,9 @@
          ierr,       & ! MPI error flag
          outunit,    & ! output unit
          error_code    ! return code
+      integer (int_kind) :: &
+         pid           ! process id
+      integer (int_kind), parameter :: sigabort = 6
       logical (log_kind) :: ldoabort   ! local doabort flag
       character(len=*), parameter :: subname='(abort_ice)'
 
@@ -70,6 +75,8 @@
 #else
 #ifndef SERIAL_REMOVE_MPI
          error_code = 128
+         pid = getpid()
+         ierr = kill(pid, sigabort)
          call MPI_ABORT(MPI_COMM_WORLD, error_code, ierr)
 #endif
          stop
