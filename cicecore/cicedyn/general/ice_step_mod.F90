@@ -225,6 +225,7 @@
           fswsfcn, fswintn, Sswabsn, Iswabsn, meltsliqn, meltsliq, &
           fswthrun, fswthrun_vdr, fswthrun_vdf, fswthrun_idr, fswthrun_idf
       use ice_calendar, only: yday
+      use ice_diagnostics, only: diagnostic_abort
       use ice_domain_size, only: ncat, nilyr, nslyr, n_iso, n_aero
       use ice_flux, only: frzmlt, sst, Tf, strocnxT_iavg, strocnyT_iavg, rside, fbot, Tbot, Tsnice, &
           meltsn, melttn, meltbn, congeln, snoicen, uatmT, vatmT, fside, wlat, &
@@ -541,6 +542,9 @@
                       mlt_onset    = mlt_onset   (i,j,  iblk), &
                       frz_onset    = frz_onset   (i,j,  iblk), &
                       yday=yday, prescribed_ice=prescribed_ice)
+
+         call icepack_warnings_flush(nu_diag)
+         if (icepack_warnings_aborted()) call diagnostic_abort(i, j, iblk, 'error in ' // subname)
 
       !-----------------------------------------------------------------
       ! handle per-category i2x fields, no merging
