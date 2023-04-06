@@ -29,6 +29,7 @@
 #else
       use ice_fileunits, only: nu_diag, ice_stderr, flush_fileunit
       use mpi   ! MPI Fortran module
+      use ifport
 #endif
 
       character (len=*), intent(in),optional :: error_message  ! error message
@@ -43,6 +44,9 @@
          ierr,       & ! MPI error flag
          error_code    ! return code
 #endif
+      integer (int_kind) :: &
+         pid           ! process id
+      integer (int_kind), parameter :: sigabort = 6
       logical (log_kind) :: ldoabort   ! local doabort flag
       character(len=*), parameter :: subname='(abort_ice)'
 
@@ -70,6 +74,8 @@
       call flush_fileunit(ice_stderr)
       error_code = 128
       if (ldoabort) then
+         pid = getpid()
+         ierr = kill(pid, sigabort)
          call MPI_ABORT(MPI_COMM_WORLD, error_code, ierr)
          stop
       endif
