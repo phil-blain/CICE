@@ -126,15 +126,10 @@ Debugging hints
 -----------------------
 
 Several utilities are available that can be helpful when debugging the
-code. Not all of these will work everywhere in the code, due to possible
-conflicts in module dependencies.
+code.
 
-*debug\_ice* (**ice\_diagnostics.F90**)
-    A wrapper for *print\_state* that is easily called from numerous
-    points during the timestepping loop.
-
-*print\_state* (**ice\_diagnostics.F90**)
-    Print the ice state and forcing fields for a given grid cell.
+Namelist flags
+^^^^^^^^^^^^^^
 
 `debug\_forcing` = true (**ice\_in**)
     Print numerous diagnostic quantities associated with input forcing.
@@ -176,6 +171,19 @@ conflicts in module dependencies.
 
 `conserv\_check` = true (**ice\_in**)
     Diagnoses conservation in various algorithms.
+
+Subroutines
+^^^^^^^^^^^
+
+Not all of these will work everywhere in the code, due to possible
+conflicts in module dependencies.
+
+*debug\_ice* (**ice\_diagnostics.F90**)
+    A wrapper for *print\_state* that is easily called from numerous
+    points during the timestepping loop.
+
+*print\_state* (**ice\_diagnostics.F90**)
+    Print the ice state and forcing fields for a given grid cell.
 
 *global\_minval, global\_maxval, global\_sum* (**ice\_global\_reductions.F90**)
     Compute and print the minimum and maximum values for an individual
