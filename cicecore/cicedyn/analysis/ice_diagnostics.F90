@@ -1721,7 +1721,7 @@
 
       subroutine debug_ice(iblk, plabeld)
 
-      character (char_len), intent(in) :: plabeld
+      character (len=*), intent(in) :: plabeld
       integer (kind=int_kind), intent(in) :: iblk
 
       ! local
@@ -1771,7 +1771,7 @@
           fsens, flat, evap, flwout, swvdr, swvdf, swidr, swidf, rhoa, &
           frzmlt, sst, sss, Tf, Tref, Qref, Uref, uocn, vocn, strtltxU, strtltyU
 
-      character (len=20), intent(in) :: plabel
+      character (len=*), intent(in) :: plabel
 
       integer (kind=int_kind), intent(in) :: &
           i, j       , & ! horizontal indices
