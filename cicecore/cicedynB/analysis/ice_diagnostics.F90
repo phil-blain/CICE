@@ -1534,7 +1534,7 @@
       use ice_communicate, only: my_task
       use ice_blocks, only: nx_block, ny_block
 
-      character (char_len), intent(in) :: plabeld
+      character (len=*), intent(in) :: plabeld
       integer (kind=int_kind), intent(in) :: iblk
 
       ! local 
@@ -1583,7 +1583,7 @@
           fsens, flat, evap, flwout, swvdr, swvdf, swidr, swidf, rhoa, &
           frzmlt, sst, sss, Tf, Tref, Qref, Uref, uocn, vocn, strtltx, strtlty
 
-      character (len=20), intent(in) :: plabel
+      character (len=*), intent(in) :: plabel
 
       integer (kind=int_kind), intent(in) :: & 
           i, j       , & ! horizontal indices
