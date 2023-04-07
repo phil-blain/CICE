@@ -138,7 +138,10 @@ Namelist flags
     Print diagnostics during block decomposition and distribution.
 
 `debug\_model` = true (**ice\_in**)
-    Print extended diagnostics for the first point associated with `print\_points`.
+    Print extended diagnostics for the grid point defined by ``debug_model_i``,
+    ``debug_model_j``, ``debug_model_iblk`` and ``debug_model_task``. If those are unset,
+    defaults to printing diagnostics for the point corresponding to coordinates ``lonpnt(1)``, ``latpnt(1)``.
+    These diagnostics are printed several times per time step.
 
 `debug\_model\_i` = integer (**ice\_in**)
     Defines the local i index for the point to be diagnosed with `debug\_model`.
@@ -167,7 +170,8 @@ Namelist flags
     also provides the local grid indices and block and processor numbers
     (`ip`, `jp`, `iblkp`, `mtask`) for these points, which can be used in
     to call *print\_state*. This option can be fairly slow,
-    due to gathering data from processors.
+    due to gathering data from processors. These diagnostics are written
+    once every ``diagfreq`` time steps.
 
 `conserv\_check` = true (**ice\_in**)
     Diagnoses conservation in various algorithms.
