@@ -160,7 +160,7 @@ Namelist flags
     also provides the local grid indices and block and processor numbers
     (`ip`, `jp`, `iblkp`, `mtask`) for these points, which can be used in
     to call *print\_state*. This option can be fairly slow,
-    due to gathering data from processors. These diagnostics are printed once per time step.
+    due to gathering data from processors. These diagnostics once every ``diagfreq`` time steps.
 
 `conserv\_check` = true (**ice\_in**)
     Diagnoses conservation in various algorithms.
