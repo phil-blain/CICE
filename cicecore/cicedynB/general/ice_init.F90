@@ -2441,6 +2441,11 @@
 
          endif                  ! rectgrid
 
+         ! netcdf interface for reading aicen,vicen,vsnon
+         if (trim(ice_data_type) == 'initnc') then
+            call initnc(icells,indxi,indxj)
+         endif
+
          do n = 1, ncat
 
             ! ice volume, snow volume
@@ -2448,6 +2453,8 @@
                i = indxi(ij)
                j = indxj(ij)
 
+              ! avoid overwriting aicen,vicen,vsnon if already defined
+              if (trim(ice_data_type) /= 'initnc') then
                aicen(i,j,n) = ainit(n)
 
                if (trim(ice_data_type) == 'box2001') then
@@ -2484,6 +2491,7 @@
                   vicen(i,j,n) = hinit(n) * ainit(n) ! m
                endif
                vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+              endif ! on ice_data_type /= initnc
 
                call icepack_init_trcr(Tair  = Tair(i,j), Tf = Tf(i,j),  &
                                       Sprofile = salinz(i,j,:),         &
@@ -2658,6 +2666,234 @@
 
       end subroutine boxslotcyl_data_vel
 
+!=======================================================================
+!
+! !IROUTINE: initnc - initialize from single-category state variables from netcdf
+!
+! ! from FD 2012-11
+!
+      subroutine initnc(ncells,indxi,indxj)
+
+      use ice_constants, only: c0, c1, c2, c3, p2, p5, &
+          field_loc_center, field_type_scalar
+      use ice_domain_size, only: max_blocks, ncat
+      use ice_fileunits, only: nu_diag
+      use ice_read_write
+      use ice_grid, only: tmask
+      use ice_blocks, only: block, get_block, nx_block, ny_block
+      use ice_domain, only: nblocks
+      use ice_state, only: aicen, vicen, vsnon
+      use ice_arrays_column, only: hin_max
+      use ice_flux, only: Tf, Tair, sst, sss
+      use ice_arrays_column, only: oceanmixed_ice
+
+      ! arguments
+      integer (kind=int_kind), intent(out) :: ncells
+      integer (kind=int_kind), dimension(nx_block*ny_block), intent(out) :: &
+         indxi, indxj    ! compressed indices for cells with aicen > puny
+
+      ! locals
+      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks) :: &
+           work1, work2, work3              ! output array (real, 8-byte)
+
+      integer (kind=int_kind) :: &
+         i, j,     &     ! index inside block
+         iblk,     &     ! block index
+         n,        &     ! ice category index
+         it,       &     ! tracer index
+         fid_init        ! file id for netCDF init file
+
+      character (char_len) :: &
+            fieldname    ! field name in netcdf file
+      character (char_len_long) :: &        ! input data file names
+            init_file = 'init_cice.nc'
+      logical (kind=log_kind) :: diag=.true.
+
+      real (kind=dbl_kind) :: &
+         zfbar, zhbar, zhsno, zhinf, &
+         za, zb, zhm1, zhp1, zjk, zfk, zhk, zhup, zfseuil=0.85
+
+      aicen(:,:,:,:) = c0
+      vicen(:,:,:,:) = c0
+      vsnon(:,:,:,:) = c0
+
+      if (my_task == master_task) then
+
+          write (nu_diag,*) ' '
+          write (nu_diag,*) 'Initial ice file: ', trim(init_file)
+          call flush(nu_diag)
+
+          call ice_open_nc(init_file,fid_init)
+
+      endif
+
+      fieldname='aice'
+
+      call ice_read_nc(fid_init,1,fieldname,work1,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='hice'
+
+      call ice_read_nc(fid_init,1,fieldname,work2,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='hsnow'
+
+      call ice_read_nc(fid_init,1,fieldname,work3,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='tair'
+
+      call ice_read_nc(fid_init,1,fieldname,Tair,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='sst'
+
+      call ice_read_nc(fid_init,1,fieldname,sst,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='sss'
+
+      call ice_read_nc(fid_init,1,fieldname,sss,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+         !$OMP PARALLEL DO PRIVATE(iblk,i,j)
+         do iblk = 1, nblocks
+            do j = 1, ny_block
+            do i = 1, nx_block
+               Tf (i,j,iblk) = -0.054_dbl_kind * sss(i,j,iblk) ! freezing temp (C)
+               sst(i,j,iblk) = max(sst(i,j,iblk),Tf(i,j,iblk))
+            enddo
+            enddo
+         enddo
+         !$OMP END PARALLEL DO
+
+      if (my_task == master_task) then
+         call ice_close_nc(fid_init)
+         write(nu_diag,*) 'closing file ',TRIM(init_file)
+         call flush(nu_diag)
+      endif
+
+      !-----------------------------------------------------------------
+      ! Place ice where ocean surface is cold.
+      ! Note: If SST is not read from a file, then the ocean is assumed
+      !       to be at its freezing point everywhere, and ice will
+      !       extend to the prescribed edges.
+      !-----------------------------------------------------------------
+
+      ncells = 0
+      do iblk = 1, nblocks
+
+         do j = 1, ny_block
+            do i = 1, nx_block
+             if (tmask(i,j,iblk)) then
+!       !-----------------------------------------------------------------
+!       ! Place ice at given thickness category
+!                do n = 1, ncat
+!
+!                   if ( hin_max(n-1) <= work2(i,j,iblk) .and. &
+!                 &                      work2(i,j,iblk) < hin_max(n) ) then
+!                       aicen(i,j,n,iblk) = work1(i,j,iblk)
+!                       vicen(i,j,n,iblk) = work1(i,j,iblk) * work2(i,j,iblk) ! m
+!                       vsnon(i,j,n,iblk) = work1(i,j,iblk) * work3(i,j,iblk) ! m
+!                   endif
+!                enddo
+      !-----------------------------------------------------------------
+      ! Spread ice through different thickness categories (Mathieu Chevalier's function)
+! MCH spread thickness/concentration over all categories
+
+               zfbar = work1(i,j,iblk)
+               zhbar = work1(i,j,iblk) * work2(i,j,iblk)
+               zhsno = work3(i,j,iblk)
+               if ( zfbar > c0 ) then
+                  ncells = ncells + 1
+                  indxi(ncells) = i
+                  indxj(ncells) = j
+               endif
+               if ( zfbar <= zfseuil .and. zfbar > 0.01_dbl_kind .and. zhbar > 0.1_dbl_kind) then
+                  ! Assume a linear distribution in the MIZ
+                  zhinf = 3._dbl_kind*zhbar / zfbar
+                  za=2._dbl_kind*zfbar / zhinf
+                  zb=za / zhinf
+                  do n=1,ncat
+                     zhm1=hin_max(n-1)
+                     zhp1=hin_max(n)
+                     if (zhm1 .ge. zhinf ) then
+                        zfk=0._dbl_kind
+                        if (n.eq.ncat) then
+                           zhk=(zhm1+1.)*zfk
+                        else
+                           zhk=0.5_dbl_kind*(zhp1+zhm1)*zfk
+                        end if
+                     else
+                        if (zhinf.le.zhp1) then
+                           zhup=zhinf
+                        else
+                           zhup=zhp1
+                        end if
+                        zfk = za*(zhup - zhm1)-zb*(zhup*zhup-zhm1*zhm1)/2._dbl_kind
+                        zhk = za*(zhup*zhup - zhm1*zhm1)/2._dbl_kind-zb*(zhup*zhup*zhup - zhm1*zhm1*zhm1)/3._dbl_kind
+                     end if
+                     aicen(i,j,n,iblk)=zfk
+                     vicen(i,j,n,iblk)=zhk
+                  end do
+               elseif ( zfbar > zfseuil .and. zhbar > 0.1_dbl_kind ) then
+! Assume a parabolic distribution in compact pack ice
+                  zhinf = 2._dbl_kind*zhbar / zfbar
+                  za = 6._dbl_kind * zfbar / (zhinf*zhinf*zhinf)
+                  do n=1,ncat
+                     zhm1=hin_max(n-1)
+                     zhp1=hin_max(n)
+                     if (zhm1 .ge. zhinf ) then
+                        zfk=0._dbl_kind
+                        if (n.eq.ncat) then
+                           zhk=(zhm1+1.)*zfk
+                        else
+                            zhk=0.5_dbl_kind*(zhp1+zhm1)*zfk
+                        end if
+                     else
+                        if (zhinf.le.zhp1) then
+                           zhup=zhinf
+                        else
+                           zhup=zhp1
+                        end if
+                        zfk = za*( zhinf*(zhup*zhup - zhm1*zhm1) / 2._dbl_kind - ( zhup*zhup*zhup - zhm1*zhm1*zhm1 ) / 3._dbl_kind )
+                        zhk = za*( zhinf*(zhup*zhup*zhup - zhm1*zhm1*zhm1) / 3._dbl_kind - ( zhup*zhup*zhup*zhup - zhm1*zhm1*zhm1*zhm1 ) / 4._dbl_kind )
+                     end if
+                     aicen(i,j,n,iblk)=zfk
+                     vicen(i,j,n,iblk)=zhk
+                  end do
+               else
+                  do n = 1, ncat
+      !-----------------------------------------------------------------
+      ! Place ice at given thickness category
+
+                    if ( hin_max(n-1) <= work2(i,j,iblk) .and. &
+                &                        work2(i,j,iblk) < hin_max(n) ) then
+                       aicen(i,j,n,iblk) = zfbar
+                       vicen(i,j,n,iblk) = zhbar ! m
+                    endif
+                  enddo
+               end if
+               vsnon(i,j,:,iblk) = min(zhsno * aicen(i,j,:,iblk),  vicen(i,j,:,iblk)*p2)
+             endif
+            enddo
+         enddo
+      enddo
+
+      call ice_barrier()
+
+      if (my_task == master_task) then
+         write(nu_diag,*) 'end routine initnc'
+         call flush(nu_diag)
+      endif
+
+      end subroutine initnc
 !=======================================================================
 
       end module ice_init
