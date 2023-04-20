@@ -1126,7 +1126,7 @@
       do i = ilo, ihi
 
          l_print_point = .false.
-         debug = .false.
+         debug = .true.
          if (debug .and. print_points) then
             do ipoint = 1, npnt
                if (my_task == pmloc(ipoint) .and. &

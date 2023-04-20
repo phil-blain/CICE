@@ -272,7 +272,7 @@
          do i = 1, nx_block ! can be ilo, ihi
 
             l_print_point = .false.
-            debug = .false. ! this should be debug_shortwave in the namelist
+            debug = .true. ! this should be debug_shortwave in the namelist
             if (debug .and. print_points) then
                do ipoint = 1, npnt
                   if (my_task == pmloc(ipoint) .and. &
