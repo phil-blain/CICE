@@ -1133,7 +1133,6 @@
                     i == piloc(ipoint) .and. &
                     j == pjloc(ipoint)) &
                     l_print_point = .true.
-                    write (nu_diag, *) 'my_task = ',my_task
             enddo ! ipoint
          endif
          fbri(:) = c0
