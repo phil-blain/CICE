@@ -2492,7 +2492,7 @@
                j = indxj(ij)
 
               ! avoid overwriting aicen,vicen,vsnon if already defined
-              if (trim(ice_data_type) /= 'initnc') then
+              if (trim(ice_data_type(1:6)) /= 'initnc') then
                aicen(i,j,n) = ainit(n)
 
                if (trim(ice_data_type) == 'box2001') then
