@@ -645,7 +645,7 @@
 
       integer (kind=int_kind) :: n
 
-      integer (kind=int_kind), parameter :: max_d = 6
+      integer (kind=int_kind), parameter :: max_d = 7
       real (kind=dbl_kind) :: fcondtopn_d(max_d), fsurfn_d(max_d)
       real (kind=dbl_kind) :: stefan_boltzmann, Tffresh
       real (kind=dbl_kind) :: vonkar, zref, iceruf
@@ -655,9 +655,11 @@
       character(len=*), parameter :: subname = '(init_coupler_flux)'
 
       data fcondtopn_d / -50.0_dbl_kind,-17.0_dbl_kind,-12.0_dbl_kind, &
-                          -9.0_dbl_kind, -7.0_dbl_kind, -3.0_dbl_kind /
+                          -9.0_dbl_kind, -7.0_dbl_kind, -3.0_dbl_kind, &
+                          -1.0_dbl_kind /
       data fsurfn_d    /  0.20_dbl_kind, 0.15_dbl_kind, 0.10_dbl_kind, &
-                          0.05_dbl_kind, 0.01_dbl_kind, 0.01_dbl_kind /
+                          0.05_dbl_kind, 0.01_dbl_kind, 0.01_dbl_kind, &
+                          0.01_dbl_kind /
 
       call icepack_query_parameters(stefan_boltzmann_out=stefan_boltzmann, &
          Tffresh_out=Tffresh, vonkar_out=vonkar, zref_out=zref, iceruf_out=iceruf)
