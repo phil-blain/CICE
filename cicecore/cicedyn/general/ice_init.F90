@@ -1443,10 +1443,12 @@
 
 ! tcraig, is it really OK for users to run inconsistently?
 ! ech: yes, for testing sensitivities.  It's not recommended for science runs
-      if (ktherm == 1 .and. trim(tfrz_option) /= 'linear_salt') then
+      if (ktherm == 1 .and. (trim(tfrz_option) /= 'linear_salt' .or. &
+                             trim(tfrz_option) /= 'nonlin')) then
          if (my_task == master_task) then
             write(nu_diag,*) subname//' WARNING: ktherm = 1 and tfrz_option = ',trim(tfrz_option)
             write(nu_diag,*) subname//' WARNING:   For consistency, set tfrz_option = linear_salt'
+            write(nu_diag,*) subname//' WARNING:                     or tfrz_option = nonlin'
          endif
       endif
       if (ktherm == 2 .and. trim(tfrz_option) /= 'mushy') then
