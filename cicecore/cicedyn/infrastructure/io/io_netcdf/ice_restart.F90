@@ -830,10 +830,14 @@
       character(len=*), parameter :: subname = '(final_restart)'
 
 #ifdef USE_NETCDF
-      status = nf90_close(ncid)
 
-      if (my_task == master_task) &
-         write(nu_diag,'(a,i8,4x,i4.4,a,i2.2,a,i2.2,a,i5.5)') 'Restart read/written ',istep1,myear,'-',mmonth,'-',mday,'-',msec
+      if (my_task == master_task) then
+         status = nf90_close(ncid)
+         if (status /= nf90_noerr) call abort_ice(subname// &
+            'ERROR: closing restart ncfile: ' // trim(nf90_strerror(status)))
+
+            write(nu_diag,'(a,i8,4x,i4.4,a,i2.2,a,i2.2,a,i5.5)') 'Restart read/written ',istep1,myear,'-',mmonth,'-',mday,'-',msec
+      endif
 
 #else
       call abort_ice(subname//'ERROR: USE_NETCDF cpp not defined', &
