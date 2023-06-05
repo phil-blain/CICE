@@ -126,15 +126,10 @@ Debugging hints
 -----------------------
 
 Several utilities are available that can be helpful when debugging the
-code. Not all of these will work everywhere in the code, due to possible
-conflicts in module dependencies.
+code.
 
-*debug\_ice* (**ice\_diagnostics.F90**)
-    A wrapper for *print\_state* that is easily called from numerous
-    points during the timestepping loop.
-
-*print\_state* (**ice\_diagnostics.F90**)
-    Print the ice state and forcing fields for a given grid cell.
+Namelist flags
+^^^^^^^^^^^^^^
 
 `debug\_forcing` = true (**ice\_in**)
     Print numerous diagnostic quantities associated with input forcing.
@@ -143,7 +138,10 @@ conflicts in module dependencies.
     Print diagnostics during block decomposition and distribution.
 
 `debug\_model` = true (**ice\_in**)
-    Print extended diagnostics for the first point associated with `print\_points`.
+    Print extended diagnostics for the grid point defined by ``debug_model_i``,
+    ``debug_model_j``, ``debug_model_iblk`` and ``debug_model_task``. If those are unset,
+    defaults to printing diagnostics for the point corresponding to coordinates ``lonpnt(1)``, ``latpnt(1)``.
+    These diagnostics are printed several times per time step.
 
 `debug\_model\_i` = integer (**ice\_in**)
     Defines the local i index for the point to be diagnosed with `debug\_model`.
@@ -172,10 +170,24 @@ conflicts in module dependencies.
     also provides the local grid indices and block and processor numbers
     (`ip`, `jp`, `iblkp`, `mtask`) for these points, which can be used in
     to call *print\_state*. This option can be fairly slow,
-    due to gathering data from processors.
+    due to gathering data from processors. These diagnostics are written
+    once every ``diagfreq`` time steps.
 
 `conserv\_check` = true (**ice\_in**)
     Diagnoses conservation in various algorithms.
+
+Subroutines
+^^^^^^^^^^^
+
+Not all of these will work everywhere in the code, due to possible
+conflicts in module dependencies.
+
+*debug\_ice* (**ice\_diagnostics.F90**)
+    A wrapper for *print\_state* that is easily called from numerous
+    points during the timestepping loop.
+
+*print\_state* (**ice\_diagnostics.F90**)
+    Print the ice state and forcing fields for a given grid cell.
 
 *global\_minval, global\_maxval, global\_sum* (**ice\_global\_reductions.F90**)
     Compute and print the minimum and maximum values for an individual
