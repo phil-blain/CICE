@@ -1534,7 +1534,7 @@
       use ice_communicate, only: my_task
       use ice_blocks, only: nx_block, ny_block
 
-      character (char_len), intent(in) :: plabeld
+      character (len=*), intent(in) :: plabeld
       integer (kind=int_kind), intent(in) :: iblk
 
       ! local 
@@ -1577,12 +1577,13 @@
       use ice_blocks, only: block, get_block
       use ice_domain, only: blocks_ice
       use ice_domain_size, only: ncat, nilyr, nslyr, nfsd
-      use ice_state, only: aice0, aicen, vicen, vsnon, uvel, vvel, trcrn
+      use ice_grid, only: TLAT, TLON
+      use ice_state, only: aice, aice0, aicen, vicen, vsnon, uvel, vvel, trcrn
       use ice_flux, only: uatm, vatm, potT, Tair, Qa, flw, frain, fsnow, &
           fsens, flat, evap, flwout, swvdr, swvdf, swidr, swidf, rhoa, &
           frzmlt, sst, sss, Tf, Tref, Qref, Uref, uocn, vocn, strtltx, strtlty
 
-      character (len=20), intent(in) :: plabel
+      character (len=*), intent(in) :: plabel
 
       integer (kind=int_kind), intent(in) :: & 
           i, j       , & ! horizontal indices
@@ -1612,19 +1613,21 @@
       call icepack_query_parameters( &
            rad_to_deg_out=rad_to_deg, puny_out=puny, rhoi_out=rhoi, lfresh_out=lfresh, &
            rhos_out=rhos, cp_ice_out=cp_ice)
-      call icepack_warnings_flush(nu_diag)
-      if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
-         file=__FILE__, line=__LINE__)
 
       this_block = get_block(blocks_ice(iblk),iblk)         
 
-      write(nu_diag,*) subname,plabel
-      write(nu_diag,*) 'istep1, my_task, i, j, iblk:', &
+      write(nu_diag,*) subname,' ',trim(plabel)
+      write(nu_diag,*) subname,' istep1, my_task, i, j, iblk:', &
                         istep1, my_task, i, j, iblk
-      write(nu_diag,*) 'Global i and j:', &
+      write(nu_diag,*) subname,' Global block:', this_block%block_id
+      write(nu_diag,*) subname,' Global i and j:', &
                         this_block%i_glob(i), &
-                        this_block%j_glob(j) 
+                        this_block%j_glob(j)
+      write (nu_diag,*) subname,' Lat, Lon (degrees):', &
+                        TLAT(i,j,iblk)*rad_to_deg, &
+                        TLON(i,j,iblk)*rad_to_deg
       write(nu_diag,*) ' '
+      write(nu_diag,*) 'aice ', aice(i,j,iblk)
       write(nu_diag,*) 'aice0', aice0(i,j,iblk)
       do n = 1, ncat
          write(nu_diag,*) ' '
@@ -1883,49 +1886,37 @@
 
 ! prints error information prior to aborting
 
-      subroutine diagnostic_abort(istop, jstop, iblk, istep1, stop_label)
+      subroutine diagnostic_abort(istop, jstop, iblk, stop_label)
 
       use ice_blocks, only: block, get_block
-      use ice_communicate, only: my_task
       use ice_domain, only: blocks_ice
       use ice_grid, only: TLAT, TLON
       use ice_state, only: aice
 
       integer (kind=int_kind), intent(in) :: &
          istop, jstop, & ! indices of grid cell where model aborts
-         iblk        , & ! block index
-         istep1          ! time step number
+         iblk            ! block index
 
-      character (char_len), intent(in) :: stop_label
+      character (len=*), intent(in) :: stop_label
 
       ! local variables
-
-      real (kind=dbl_kind) :: rad_to_deg
 
       type (block) :: &
          this_block      ! block information for current block
 
       character(len=*), parameter :: subname = '(diagnostic_abort)'
 
-      call icepack_query_parameters(rad_to_deg_out=rad_to_deg)
-      call icepack_warnings_flush(nu_diag)
-      if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
-         file=__FILE__, line=__LINE__)
+      this_block = get_block(blocks_ice(iblk),iblk)
 
-      this_block = get_block(blocks_ice(iblk),iblk)         
-
-      write (nu_diag,*) 'istep1, my_task, iblk =', &
-                         istep1, my_task, iblk
-      write (nu_diag,*) 'Global block:', this_block%block_id
-      if (istop > 0 .and. jstop > 0) &
-      write (nu_diag,*) 'Global i and j:', &
-                          this_block%i_glob(istop), &
-                          this_block%j_glob(jstop) 
-      write (nu_diag,*) 'Lat, Lon:', &
-                         TLAT(istop,jstop,iblk)*rad_to_deg, &
-                         TLON(istop,jstop,iblk)*rad_to_deg
-      write (nu_diag,*) 'aice:', &
-                         aice(istop,jstop,iblk)
+      call flush_fileunit(nu_diag)
+      if (istop > 0 .and. jstop > 0) then
+         call print_state(trim(stop_label),istop,jstop,iblk)
+      else
+         write (nu_diag,*) subname,' istep1, my_task, iblk =', &
+                            istep1, my_task, iblk
+         write (nu_diag,*) subname,' Global block:', this_block%block_id
+      endif
+      call flush_fileunit(nu_diag)
       call abort_ice (subname//'ERROR: '//trim(stop_label))
 
       end subroutine diagnostic_abort
