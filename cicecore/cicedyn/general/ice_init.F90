@@ -2647,6 +2647,7 @@
           aice0, aice, vice, vsno, trcr, aice_init, bound_state, &
           n_trcr_strata, nt_strata, trcr_base, uvel, vvel, &
           uvelN, vvelN, uvelE, vvelE
+      use ice_forcing, only: ice_data_type
 
       integer (kind=int_kind) :: &
          ilo, ihi    , & ! physical domain indices
@@ -2808,6 +2809,11 @@
          nt_strata    (nt_ipnd,1) = nt_apnd ! on melt pond area
       endif
 
+      if (trim(ice_data_type(1:6)) == 'initnc') then
+         ! note that the volume arrays for ice and snow
+         ! are actually read as thickness, we are just using the arrays as placeholders
+         call readnc(aice, vice, vsno, Tair, sst)
+      endif
       !-----------------------------------------------------------------
       ! Set state variables
       !-----------------------------------------------------------------
@@ -2836,7 +2842,9 @@
                              salinz(:,:,:, iblk), Tmltz(:,:,:,  iblk), &
                              aicen(:,:,  :,iblk), trcrn(:,:,:,:,iblk), &
                              vicen(:,:,  :,iblk), vsnon(:,:,  :,iblk), &
-                             uvel (:,:,    iblk), vvel (:,:,    iblk))
+                             uvel (:,:,    iblk), vvel (:,:,    iblk), &
+                             aice (:,:,    iblk), vice (:,:,    iblk), &
+                             vsno (:,:,    iblk))
 
       enddo                     ! iblk
       !$OMP END PARALLEL DO
@@ -2936,7 +2944,9 @@
                                 salinz,   Tmltz, &
                                 aicen,    trcrn, &
                                 vicen,    vsnon, &
-                                uvel,     vvel)
+                                uvel,     vvel,  &
+                                aice,     hice,  &
+                                hsno)
 
 
       use ice_arrays_column, only: hin_max
@@ -2964,8 +2974,11 @@
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(in) :: &
          Tair    , & ! air temperature  (K)
-         Tf      , & ! freezing temperature (C)
-         sst         ! sea surface temperature (C)
+         Tf      , & ! freezing temperature (C) 
+         sst     , & ! sea surface temperature (C)
+         aice    , & ! ice total concentration
+         hice    , & ! ice  thickness (m)
+         hsno        ! snow thickness (m)
 
       real (kind=dbl_kind), dimension (nx_block,ny_block,nilyr), intent(in) :: &
          salinz  , & ! initial salinity profile
@@ -3317,6 +3330,34 @@
          ! ice distribution
          !---------------------------------------------------------
 
+         ! ----------------------------------------------------------
+         ! interface for choosing aicen,vicen,vsnon based on averaged
+         ! fields of aice,hice,hsno
+         ! ----------------------------------------------------------
+         if (ice_data_type(1:6) == 'initnc') then
+            ! find valid ice points
+            icells = 0
+            do j = jlo, jhi
+            do i = ilo, ihi
+               if ( tmask(i,j) .and. aice(i,j) > c0 ) then
+                  icells = icells + 1
+                  indxi(icells) = i
+                  indxj(icells) = j
+               endif               ! tmask
+            enddo                  ! i
+            enddo                  ! j
+
+            if (trim(ice_data_type) == 'initnc_sprd') then
+               ! spread mean values to ITD
+               call spread_avg_itd(icells, indxi, indxj,        &
+                        aice, hice, hsno, aicen, vicen, vsnon)
+            else
+               ! put the mean in closest category ITD
+               call put_avg_itd(icells, indxi, indxj,        &
+                        aice, hice, hsno, aicen, vicen, vsnon)
+            endif
+         endif
+
          do n = 1, ncat
 
             ! ice volume, snow volume
@@ -3324,6 +3365,8 @@
                i = indxi(ij)
                j = indxj(ij)
 
+              ! avoid overwriting aicen,vicen,vsnon if already defined
+              if (ice_data_type(1:6) /= 'initnc') then
                aicen(i,j,n) = ainit(n)
 
                if (trim(ice_data_dist) == 'box2001') then
@@ -3370,6 +3413,7 @@
 
                vicen(i,j,n) = hinit(n) * aicen(i,j,n) ! m
                vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+              endif ! on ice_data_type /= initnc
 
                call icepack_init_trcr(Tair  = Tair(i,j), Tf = Tf(i,j),  &
                                       Sprofile = salinz(i,j,:),         &
@@ -3432,6 +3476,269 @@
 
       end subroutine set_state_var
 
+!=======================================================================
+
+! Read single-category state variables from netcdf
+!
+! author: FD 2012-11 (from initnc)
+
+      subroutine readnc(aice, hice, hsno, Tair, sst)
+
+      use ice_fileunits, only: nu_diag
+      use ice_read_write
+      use ice_constants, only: field_loc_center, field_type_scalar
+      use ice_domain_size, only: max_blocks
+      use ice_blocks, only: nx_block, ny_block
+
+      ! arguments
+      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), intent(inout) :: &
+         Tair    , & ! air temperature  (K)
+         sst     , & ! sea surface temperature (C)
+         aice    , & ! ice total concentration
+         hice    , & ! ice thickness (m)
+         hsno        ! snow thickness (m)
+
+      ! locals
+      integer (kind=int_kind) :: &
+         i, j,     &     ! index inside block
+         iblk,     &     ! block index
+         n,        &     ! ice category index
+         it,       &     ! tracer index
+         fid_init        ! file id for netCDF init file
+
+      character (char_len) :: &
+            fieldname    ! field name in netcdf file
+      character (char_len_long) :: &        ! input data file names
+            init_file = 'init_cice.nc'
+      logical (kind=log_kind) :: diag=.true.
+
+      if (my_task == master_task) then
+
+          write (nu_diag,*) ' '
+          write (nu_diag,*) 'Initial ice file: ', trim(init_file)
+          call flush(nu_diag)
+
+          call ice_open_nc(init_file,fid_init)
+
+      endif
+
+      fieldname='aice'
+
+      call ice_read_nc(fid_init,1,fieldname,aice,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='hice'
+
+      call ice_read_nc(fid_init,1,fieldname,hice,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='hsnow'
+
+      call ice_read_nc(fid_init,1,fieldname,hsno,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='tair'
+
+      call ice_read_nc(fid_init,1,fieldname,Tair,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+! for later
+!      fieldname='sst'
+!
+!      call ice_read_nc(fid_init,1,fieldname,sst ,diag, &
+!                    field_loc=field_loc_center, &
+!                    field_type=field_type_scalar)
+!
+      if (my_task == master_task) then
+         call ice_close_nc(fid_init)
+         write(nu_diag,*) 'closing file ',TRIM(init_file)
+         call flush(nu_diag)
+      endif
+      end subroutine readnc
+
+!=======================================================================
+
+! Initialize from single-category state variables
+!
+! author: FD 2012-11 (from initnc)
+
+      subroutine put_avg_itd(icells, indxi, indxj, aice, hice, hsno, aicen, vicen, vsnon)
+
+      use ice_constants, only: c0
+      use ice_domain_size, only: max_blocks, ncat
+      use ice_blocks, only: nx_block, ny_block
+      use ice_arrays_column, only: hin_max
+
+      ! arguments
+      integer, intent(in) :: icells
+
+      integer (kind=int_kind), dimension(nx_block*ny_block), intent(in) :: &
+         indxi, indxj    ! compressed indices for cells with aicen > puny
+
+      real (kind=dbl_kind), dimension(nx_block,ny_block), intent(in) :: &
+           aice, hice, hsno              ! input array (real, 8-byte)
+
+      real (kind=dbl_kind), dimension(nx_block,ny_block,ncat), intent(out) :: &
+           aicen, vicen, vsnon              ! output array (real, 8-byte)
+
+      ! locals
+      integer (kind=int_kind) :: &
+         ij,       &     ! compact index
+         i, j,     &     ! index inside block
+         n               ! ice category index
+
+      aicen(:,:,:) = c0
+      vicen(:,:,:) = c0
+      vsnon(:,:,:) = c0
+
+      do ij = 1, icells
+         i = indxi(ij)
+         j = indxj(ij)
+
+         !-----------------------------------------------------------------
+         ! Place ice at given thickness category
+         do n = 1, ncat
+            if ( hin_max(n-1) <= hice(i,j) .and. &
+             &      hice(i,j) < hin_max(n) ) then
+                aicen(i,j,n) = aice(i,j)
+                vicen(i,j,n) = aice(i,j) * hice(i,j) ! m
+                vsnon(i,j,n) = aice(i,j) * hsno(i,j) ! m
+            endif
+         enddo
+      enddo
+
+      end subroutine put_avg_itd
+
+!=======================================================================
+
+! Initialize from single-category state variables and spread ITD
+!
+! author: FD 2012-11 (from initnc)
+
+      subroutine spread_avg_itd(icells, indxi, indxj, aice, hice, hsno, aicen, vicen, vsnon)
+
+      use ice_constants, only: c0, c1, c2, c3, p2, p5
+      use ice_domain_size, only: max_blocks, ncat
+      use ice_blocks, only: nx_block, ny_block
+      use ice_arrays_column, only: hin_max
+
+      ! arguments
+      integer, intent(in) :: icells
+
+      integer (kind=int_kind), dimension(nx_block*ny_block), intent(in) :: &
+         indxi, indxj    ! compressed indices for cells with aicen > puny
+
+      real (kind=dbl_kind), dimension(nx_block,ny_block), intent(in) :: &
+           aice, hice, hsno              ! input array (real, 8-byte)
+
+      real (kind=dbl_kind), dimension(nx_block,ny_block,ncat), intent(out) :: &
+           aicen, vicen, vsnon              ! output array (real, 8-byte)
+
+      ! locals
+      integer (kind=int_kind) :: &
+         ij,       &     ! compact index
+         i, j,     &     ! index inside block
+         n               ! ice category index
+
+      real (kind=dbl_kind) :: &
+         zfbar, zhbar, zhsno, zhinf, &
+         za, zb, zhm1, zhp1, zjk, zfk, zhk, zhup, zfseuil=0.85
+
+      aicen(:,:,:) = c0
+      vicen(:,:,:) = c0
+      vsnon(:,:,:) = c0
+
+      !-----------------------------------------------------------------
+      ! Place ice where ocean surface is cold.
+      ! Note: If SST is not read from a file, then the ocean is assumed
+      !       to be at its freezing point everywhere, and ice will
+      !       extend to the prescribed edges.
+      !-----------------------------------------------------------------
+
+      do ij = 1, icells
+         i = indxi(ij)
+         j = indxj(ij)
+
+      !-----------------------------------------------------------------
+      ! Spread ice through different thickness categories (Mathieu Chevalier's function)
+! MCH spread thickness/concentration over all categories
+
+               zfbar = aice(i,j)
+               zhbar = aice(i,j) * hice(i,j)
+               zhsno = hsno(i,j)
+               if ( zfbar <= zfseuil .and. zfbar > 0.01_dbl_kind .and. zhbar > 0.1_dbl_kind) then
+                  ! Assume a linear distribution in the MIZ
+                  zhinf = 3._dbl_kind*zhbar / zfbar
+                  za=2._dbl_kind*zfbar / zhinf
+                  zb=za / zhinf
+                  do n=1,ncat
+                     zhm1=hin_max(n-1)
+                     zhp1=hin_max(n)
+                     if (zhm1 .ge. zhinf ) then
+                        zfk=0._dbl_kind
+                        if (n.eq.ncat) then
+                           zhk=(zhm1+1.)*zfk
+                        else
+                           zhk=0.5_dbl_kind*(zhp1+zhm1)*zfk
+                        end if
+                     else
+                        if (zhinf.le.zhp1) then
+                           zhup=zhinf
+                        else
+                           zhup=zhp1
+                        end if
+                        zfk = za*(zhup - zhm1)-zb*(zhup*zhup-zhm1*zhm1)/2._dbl_kind
+                        zhk = za*(zhup*zhup - zhm1*zhm1)/2._dbl_kind-zb*(zhup*zhup*zhup - zhm1*zhm1*zhm1)/3._dbl_kind
+                     end if
+                     aicen(i,j,n)=zfk
+                     vicen(i,j,n)=zhk
+                  end do
+               elseif ( zfbar > zfseuil .and. zhbar > 0.1_dbl_kind ) then
+! Assume a parabolic distribution in compact pack ice
+                  zhinf = 2._dbl_kind*zhbar / zfbar
+                  za = 6._dbl_kind * zfbar / (zhinf*zhinf*zhinf)
+                  do n=1,ncat
+                     zhm1=hin_max(n-1)
+                     zhp1=hin_max(n)
+                     if (zhm1 .ge. zhinf ) then
+                        zfk=0._dbl_kind
+                        if (n.eq.ncat) then
+                           zhk=(zhm1+1.)*zfk
+                        else
+                            zhk=0.5_dbl_kind*(zhp1+zhm1)*zfk
+                        end if
+                     else
+                        if (zhinf.le.zhp1) then
+                           zhup=zhinf
+                        else
+                           zhup=zhp1
+                        end if
+                        zfk = za*( zhinf*(zhup*zhup - zhm1*zhm1) / 2._dbl_kind - ( zhup*zhup*zhup - zhm1*zhm1*zhm1 ) / 3._dbl_kind )
+                        zhk = za*( zhinf*(zhup*zhup*zhup - zhm1*zhm1*zhm1) / 3._dbl_kind - ( zhup*zhup*zhup*zhup - zhm1*zhm1*zhm1*zhm1 ) / 4._dbl_kind )
+                     end if
+                     aicen(i,j,n)=zfk
+                     vicen(i,j,n)=zhk
+                  end do
+               else
+                  do n = 1, ncat
+      !-----------------------------------------------------------------
+      ! Place ice at given thickness category
+
+                    if ( hin_max(n-1) <= hice(i,j) .and. &
+                &                        hice(i,j) < hin_max(n) ) then
+                       aicen(i,j,n) = zfbar
+                       vicen(i,j,n) = zhbar ! m
+                    endif
+                  enddo
+               end if
+               vsnon(i,j,:) = min(zhsno * aicen(i,j,:),  vicen(i,j,:)*p2)
+      enddo
+
+      end subroutine spread_avg_itd
 !=======================================================================
 
       end module ice_init
