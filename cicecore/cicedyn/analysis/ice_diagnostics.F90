@@ -1722,7 +1722,7 @@
 
       subroutine debug_ice(iblk, plabeld)
 
-      character (char_len), intent(in) :: plabeld
+      character (len=*), intent(in) :: plabeld
       integer (kind=int_kind), intent(in) :: iblk
 
       ! local
@@ -1772,7 +1772,7 @@
           fsens, flat, evap, flwout, swvdr, swvdf, swidr, swidf, rhoa, &
           frzmlt, sst, sss, Tf, Tref, Qref, Uref, uocn, vocn, strtltxU, strtltyU
 
-      character (len=20), intent(in) :: plabel
+      character (len=*), intent(in) :: plabel
 
       integer (kind=int_kind), intent(in) :: &
           i, j       , & ! horizontal indices
@@ -1804,9 +1804,6 @@
       call icepack_query_parameters( &
            rad_to_deg_out=rad_to_deg, puny_out=puny, rhoi_out=rhoi, lfresh_out=lfresh, &
            rhos_out=rhos, cp_ice_out=cp_ice)
-      call icepack_warnings_flush(nu_diag)
-      if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
-         file=__FILE__, line=__LINE__)
 
       this_block = get_block(blocks_ice(iblk),iblk)
 
@@ -1962,17 +1959,10 @@
 
       ! local variables
 
-      real (kind=dbl_kind) :: rad_to_deg
-
       type (block) :: &
          this_block      ! block information for current block
 
       character(len=*), parameter :: subname = '(diagnostic_abort)'
-
-      call icepack_query_parameters(rad_to_deg_out=rad_to_deg)
-      call icepack_warnings_flush(nu_diag)
-      if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
-         file=__FILE__, line=__LINE__)
 
       this_block = get_block(blocks_ice(iblk),iblk)
 
