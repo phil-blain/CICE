@@ -135,7 +135,7 @@
 
       use ice_boundary, only: ice_HaloUpdate
       use ice_calendar, only: dt, dt_dyn, ndtd, diagfreq, write_restart, istep
-      use ice_diagnostics, only: init_mass_diags, runtime_diags
+      use ice_diagnostics, only: init_mass_diags, runtime_diags, debug_model, debug_model_iblk, debug_ice
       use ice_diagnostics_bgc, only: hbrine_diags, zsal_diags, bgc_diags
       use ice_domain, only: halo_info, nblocks
       use ice_domain_size, only: nslyr
@@ -196,6 +196,8 @@
         call da_state_update
 #endif
 
+        if (debug_model) call debug_ice(debug_model_iblk, 'beginning time step')
+
       !-----------------------------------------------------------------
       ! restoring on grid boundaries
       !-----------------------------------------------------------------
@@ -208,6 +210,8 @@
 
          if (istep == 1 .and. runtype == 'initial' .and. .not. restart) &
             call init_shortwave
+
+            if (debug_model) call debug_ice(debug_model_iblk, 'post re-init_shortwave')
 
       !-----------------------------------------------------------------
       ! initialize diagnostics and save initial state values
@@ -233,14 +237,19 @@
 
             if (calc_Tsfc .and. ktherm >= 0) call prep_radiation (iblk)
 
+            if (debug_model) call debug_ice(iblk, 'post prep_radiation')
+
       !-----------------------------------------------------------------
       ! thermodynamics and biogeochemistry
       !-----------------------------------------------------------------
 
             call step_therm1     (dt, iblk) ! vertical thermodynamics
+            if (debug_model) call debug_ice(iblk, 'post step_therm1')
+
             if (ktherm >= 0) then
                call biogeochemistry (dt, iblk) ! biogeochemistry
                call step_therm2     (dt, iblk) ! ice thickness distribution thermo
+               if (debug_model) call debug_ice(iblk, 'post step_therm2')
             endif
 
          enddo ! iblk
@@ -265,6 +274,7 @@
 
             ! momentum, stress, transport
             call step_dyn_horiz (dt_dyn)
+            if (debug_model) call debug_ice(debug_model_iblk, 'post step_dyn_horiz')
 
             ! ridging
             !$OMP PARALLEL DO PRIVATE(iblk)
@@ -272,12 +282,15 @@
                call step_dyn_ridge (dt_dyn, ndtd, iblk)
             enddo
             !$OMP END PARALLEL DO
+            if (debug_model) call debug_ice(debug_model_iblk, 'post step_dyn_ridge')
 
             ! clean up, update tendency diagnostics
             offset = c0
             call update_state (dt_dyn, daidtd, dvidtd, dagedtd, offset)
 
          enddo
+
+         if (debug_model) call debug_ice(debug_model_iblk, 'post dynamics')
 
       !-----------------------------------------------------------------
       ! albedo, shortwave radiation
@@ -290,12 +303,14 @@
          do iblk = 1, nblocks
 
             if (ktherm >= 0) call step_radiation (dt, iblk)
+            if (debug_model) call debug_ice(iblk, 'post step_radiation')
 
       !-----------------------------------------------------------------
       ! get ready for coupling and the next time step
       !-----------------------------------------------------------------
 
             call coupling_prep (iblk)
+            if (debug_model) call debug_ice(iblk, 'post coupling_prep')
 
             ! compute components of diagnostic wind
             call diagnostic_wind_components(iblk)
