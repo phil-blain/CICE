@@ -28,6 +28,11 @@
       logical (kind=log_kind), public :: &
          restore_ice                 ! restore ice state if true
 
+      character(len=char_len), public :: &
+         restore_ice_to              ! values to which ice state is restored
+                                     ! 'initial'  => restore to initial ice state
+                                     ! 'defined'  => restore to hardcoded values
+
       !-----------------------------------------------------------------
       ! state of the ice for each category
       !-----------------------------------------------------------------
@@ -69,10 +74,6 @@
      ibc,                &! ghost cell column or row
      ntrcr,              &!
      npad                 ! padding column/row counter
-
-   character (len=7), parameter :: &
-!     restore_ice_to = 'defined' ! otherwise restore to initial ice state
-     restore_ice_to = 'initial' ! restore to initial ice state
 
    type (block) :: &
      this_block  ! block info for current block

@@ -232,6 +232,7 @@
     nfreq           = 25
     restart_coszen  = .false.
     restore_ice     = .false.
+    restore_ice_to  = 'initial'
     restore_ocn     = .false.
     trestore        =  90
     precip_units    = 'mm_per_month'
