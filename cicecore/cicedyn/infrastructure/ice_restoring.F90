@@ -71,8 +71,8 @@
      npad                 ! padding column/row counter
 
    character (len=7), parameter :: &
-!     restore_ic = 'defined' ! otherwise restore to initial ice state
-     restore_ic = 'initial' ! restore to initial ice state
+!     restore_ice_to = 'defined' ! otherwise restore to initial ice state
+     restore_ice_to = 'initial' ! restore to initial ice state
 
    type (block) :: &
      this_block  ! block info for current block
@@ -109,7 +109,7 @@
 ! these arrays could be set to values read from a file...
 !-----------------------------------------------------------------------
 
-   if (trim(restore_ic) == 'defined') then
+   if (trim(restore_ice_to) == 'defined') then
 
       ! restore to defined ice state
       !$OMP PARALLEL DO PRIVATE(iblk,ilo,ihi,jlo,jhi,this_block, &
@@ -140,7 +140,7 @@
       enddo ! iblk
       !$OMP END PARALLEL DO
 
-   else  ! restore_ic
+   else  ! restore_ice_to
 
    ! restore to initial ice state
 
@@ -257,7 +257,7 @@
    enddo ! iblk
    !$OMP END PARALLEL DO
 
-   endif ! restore_ic
+   endif ! restore_ice_to
 
       !-----------------------------------------------------------------
       ! Impose land mask
