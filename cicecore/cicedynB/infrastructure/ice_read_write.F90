@@ -1184,6 +1184,9 @@
                   count=(/nx,ny,1/) )
          endif
 
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
+
          status = nf90_get_att(fid, varid, "_FillValue", missingvalue)
       endif                     ! my_task = master_task
 
@@ -1354,6 +1357,9 @@
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,ncat,1/) )
          endif
+
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
 
          status = nf90_get_att(fid, varid, "_FillValue", missingvalue)
       endif                     ! my_task = master_task
@@ -1537,6 +1543,9 @@
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,nfreq,1/) )
          endif
+
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
 
          status = nf90_get_att(fid, varid, "missing_value", missingvalue)
       endif                     ! my_task = master_task
@@ -1767,6 +1776,9 @@
          status = nf90_get_var( fid, varid, work_z, &
                start=(/1,nrec/), & 
                count=(/nilyr,1/) )
+
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
 
       endif                     ! my_task = master_task
 
@@ -2018,6 +2030,9 @@
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,ncat,1/) )
 
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: writing NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -2136,6 +2151,10 @@
                   start=(/1,1,nrec/), & 
                   count=(/nx_global,ny_global,1/) )
          endif
+
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -2292,6 +2311,9 @@
                start=(/1,1,nzlev,nrec/), & 
                count=(/nx,ny,1,1/) )
 
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -2392,6 +2414,10 @@
          status = nf90_get_var( fid, varid, work_g, &
                start=(/1/), &
                count=(/nrec/) )
+
+         if (status /= nf90_noerr) &
+            call abort_ice(subname // 'ERROR: reading NetCDF variable ' // trim(varname) //': ' // trim(nf90_strerror(status)))
+
       endif                     ! my_task = master_task
 
       !-------------------------------------------------------------------
