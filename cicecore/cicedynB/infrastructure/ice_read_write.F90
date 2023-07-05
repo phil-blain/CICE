@@ -2023,7 +2023,7 @@
       if (my_task == master_task) then
 
        !--------------------------------------------------------------
-       ! Read global array 
+       ! Write global array 
        !--------------------------------------------------------------
 
          status = nf90_put_var( fid, varid, work_g1, &
