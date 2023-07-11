@@ -541,7 +541,7 @@
       restore_ocn     = .false.   ! restore sst if true
       trestore        = 90        ! restoring timescale, days (0 instantaneous)
       restore_ice     = .false.   ! restore ice state on grid edges if true
-      restore_ice_to  = 'initial' ! restore ice state to initial ice state ('initial') or hardcoded values ('defined')
+      restore_ice_to  = 'initial' ! restore ice state to initial ice state ('initial'), hardcoded values ('defined') or zero ('zero')
       debug_forcing   = .false.   ! true writes diagnostics for input forcing
 
       latpnt(1) =  90._dbl_kind   ! latitude of diagnostic point 1 (deg)
