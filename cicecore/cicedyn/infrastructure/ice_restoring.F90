@@ -32,6 +32,7 @@
          restore_ice_to              ! values to which ice state is restored
                                      ! 'initial'  => restore to initial ice state
                                      ! 'defined'  => restore to hardcoded values
+                                     ! 'zero'     => restore to zero
 
       !-----------------------------------------------------------------
       ! state of the ice for each category
@@ -141,7 +142,7 @@
       enddo ! iblk
       !$OMP END PARALLEL DO
 
-   else  ! restore_ice_to
+   elseif (trim(restore_ice_to) == 'initial') then
 
    ! restore to initial ice state
 
@@ -258,6 +259,11 @@
    enddo ! iblk
    !$OMP END PARALLEL DO
 
+   elseif (trim(restore_ice_to) == 'zero') then
+      ! nothing more to do, already zero-initialized
+   else ! restore_ice_to
+      call abort_ice(error_message=subname//'wrong value for restore_ice_to: ' // restore_ice_to, &
+                     file=__FILE__, line=__LINE__)
    endif ! restore_ice_to
 
       !-----------------------------------------------------------------
