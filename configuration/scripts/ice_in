@@ -130,6 +130,7 @@
     hfrazilmin        = 0.05d0
     floediam          = 300.0d0
     saltmax           = 3.2
+    ferrmax           = 1.0e-2
 /
 
 &dynamics_nml
