@@ -146,7 +146,7 @@
         sw_frac, sw_dtemp, floediam, hfrazilmin, iceruf, iceruf_ocn, &
         rsnw_fall, rsnw_tmax, rhosnew, rhosmin, rhosmax, &
         windmin, drhosdwind, snwlvlfac, &
-        rhos, rhoi, rhosi, rhow, rhofresh, zTrf, saltmax
+        rhos, rhoi, rhosi, rhow, rhofresh, zTrf, saltmax, ferrmax
 
       integer (kind=int_kind) :: ktherm, kstrength, krdg_partic, krdg_redist, natmiter, &
         kitd, kcatbound, ktransport
@@ -222,7 +222,7 @@
         kitd,           ktherm,          conduct,     ksno,             &
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
         dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy,                   &
-        floediam,       hfrazilmin,      saltmax
+        floediam,       hfrazilmin,      saltmax,     ferrmax
 
       namelist /dynamics_nml/ &
         kdyn,           ndte,           revised_evp,    yield_curve,    &
@@ -440,6 +440,7 @@
       ktherm = 1               ! -1 = OFF, 1 = BL99, 2 = mushy thermo
       saltmax = 3.2_dbl_kind   ! max salinity at ice base for BL99 (ppt)
                                ! phi_init, dSin0_frazil are for mushy thermo
+      ferrmax = 1.0e-2_dbl_kind ! max allowed energy flux error (W m-2)
       conduct = 'bubbly'       ! 'MU71' or 'bubbly' (Pringle et al 2007)
       coriolis = 'latitude'    ! latitude dependent, or 'constant'
       ssh_stress = 'geostrophic'  ! 'geostrophic' or 'coupled'
@@ -926,6 +927,7 @@
       call broadcast_scalar(albedo_type,          master_task)
       call broadcast_scalar(ktherm,               master_task)
       call broadcast_scalar(saltmax,              master_task)
+      call broadcast_scalar(ferrmax,              master_task)
       call broadcast_scalar(coriolis,             master_task)
       call broadcast_scalar(ssh_stress,           master_task)
       call broadcast_scalar(kridge,               master_task)
@@ -1927,6 +1929,7 @@
          if (ktherm >= 0) then
             write(nu_diag,1002) ' dt               = ', dt, ' : thermodynamic time step'
             write(nu_diag,1002) ' ksno             = ', ksno,' : snow thermal conductivity'
+            write(nu_diag,1002) ' ferrmax          = ', ferrmax, ' : max allowed energy flux error'
             if (ktherm == 1) then
                write(nu_diag,1030) ' conduct          = ', trim(conduct),' : ice thermal conductivity'
                write(nu_diag,1002) ' saltmax          = ', saltmax, ' : max salinity at ice base'
@@ -2424,7 +2427,7 @@
 
       call icepack_init_parameters(ustar_min_in=ustar_min, albicev_in=albicev, albicei_in=albicei, &
          albsnowv_in=albsnowv, albsnowi_in=albsnowi, natmiter_in=natmiter, atmiter_conv_in=atmiter_conv, &
-         emissivity_in=emissivity, saltmax_in=saltmax, &
+         emissivity_in=emissivity, saltmax_in=saltmax, ferrmax_in=ferrmax, &
          ahmax_in=ahmax, shortwave_in=shortwave, albedo_type_in=albedo_type, R_ice_in=R_ice, R_pnd_in=R_pnd, &
          R_snw_in=R_snw, dT_mlt_in=dT_mlt, rsnw_mlt_in=rsnw_mlt, &
          kstrength_in=kstrength, krdg_partic_in=krdg_partic, krdg_redist_in=krdg_redist, mu_rdg_in=mu_rdg, &
