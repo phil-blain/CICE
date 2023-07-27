@@ -110,7 +110,7 @@
                             algo_nonlin, fpfunc_andacc, dim_andacc, reltol_andacc, &
                             damping_andacc, start_andacc, use_mean_vrel, ortho_type
       use ice_transport_driver, only: advection, conserv_check
-      use ice_restoring, only: restore_ice
+      use ice_restoring, only: restore_ice, restore_ice_to
 #ifdef CESMCOUPLED
       use shr_file_mod, only: shr_file_setIO
 #endif
@@ -241,7 +241,7 @@
         precip_units,   default_season,  wave_spec_type,nfreq,          &
         atm_data_type,  ocn_data_type,   bgc_data_type, fe_data_type,   &
         ice_data_type,  wave_spec_file,  restart_coszen,                &
-        fyear_init,     ycycle,          zTrf,                          &
+        fyear_init,     ycycle,          zTrf,          restore_ice_to, &
         atm_data_dir,   ocn_data_dir,    bgc_data_dir,                  &
         atm_data_format, ocn_data_format, rotate_wind,                  &
         oceanmixed_file
@@ -460,6 +460,7 @@
       restore_ocn     = .false.   ! restore sst if true
       trestore        = 90        ! restoring timescale, days (0 instantaneous)
       restore_ice     = .false.   ! restore ice state on grid edges if true
+      restore_ice_to  = 'initial' ! restore ice state to initial ice state ('initial'), hardcoded values ('defined') or zero ('zero')
       debug_forcing   = .false.   ! true writes diagnostics for input forcing
 
       latpnt(1) =  90._dbl_kind   ! latitude of diagnostic point 1 (deg)
@@ -804,6 +805,7 @@
       call broadcast_scalar(restore_ocn,          master_task)
       call broadcast_scalar(trestore,             master_task)
       call broadcast_scalar(restore_ice,          master_task)
+      call broadcast_scalar(restore_ice_to,       master_task)
       call broadcast_scalar(debug_forcing,        master_task)
       call broadcast_array (latpnt(1:2),          master_task)
       call broadcast_array (lonpnt(1:2),          master_task)
@@ -1807,6 +1809,8 @@
             write(nu_diag,1011) ' restore_ocn      = ', restore_ocn
          endif 
          write(nu_diag,1011) ' restore_ice      = ', restore_ice
+         if (restore_ice) &
+         write(nu_diag,1031) ' restore_ice_to   = ', restore_ice_to
          if (restore_ice .or. restore_ocn) &
          write(nu_diag,1021) ' trestore         = ', trestore
  

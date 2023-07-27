@@ -28,6 +28,12 @@
       logical (kind=log_kind), public :: &
          restore_ice                 ! restore ice state if true
 
+      character(len=char_len), public :: &
+         restore_ice_to              ! values to which ice state is restored
+                                     ! 'initial'  => restore to initial ice state
+                                     ! 'defined'  => restore to hardcoded values
+                                     ! 'zero'     => restore to zero
+
       !-----------------------------------------------------------------
       ! state of the ice for each category
       !-----------------------------------------------------------------
@@ -70,10 +76,6 @@
      ntrcr,              &!
      npad                 ! padding column/row counter
 
-   character (len=7), parameter :: &
-!     restore_ic = 'defined' ! otherwise restore to initial ice state
-     restore_ic = 'initial' ! restore to initial ice state
-
    type (block) :: &
      this_block  ! block info for current block
 
@@ -88,9 +90,7 @@
 
    if ((ew_boundary_type == 'open' .or. &
         ns_boundary_type == 'open') .and. .not.(restart_ext)) then
-      if (my_task == master_task) write (nu_diag,*) 'ERROR: restart_ext=F and open boundaries'
-      call abort_ice(error_message=subname//'open boundary and restart_ext=F', &
-         file=__FILE__, line=__LINE__)
+      if (my_task == master_task) write (nu_diag,*) 'WARNING: restart_ext=F and open boundaries'
    endif
 
    allocate (aicen_rest(nx_block,ny_block,ncat,max_blocks), &
@@ -109,7 +109,7 @@
 ! these arrays could be set to values read from a file...
 !-----------------------------------------------------------------------
 
-   if (trim(restore_ic) == 'defined') then
+   if (trim(restore_ice_to) == 'defined') then
 
       ! restore to defined ice state
       !$OMP PARALLEL DO PRIVATE(iblk,ilo,ihi,jlo,jhi,this_block, &
@@ -140,7 +140,7 @@
       enddo ! iblk
       !$OMP END PARALLEL DO
 
-   else  ! restore_ic
+   elseif (trim(restore_ice_to) == 'initial') then
 
    ! restore to initial ice state
 
@@ -257,7 +257,12 @@
    enddo ! iblk
    !$OMP END PARALLEL DO
 
-   endif ! restore_ic
+   elseif (trim(restore_ice_to) == 'zero') then
+      ! nothing more to do, already zero-initialized
+   else ! restore_ice_to
+      call abort_ice(error_message=subname//'wrong value for restore_ice_to: ' // restore_ice_to, &
+                     file=__FILE__, line=__LINE__)
+   endif ! restore_ice_to
 
       !-----------------------------------------------------------------
       ! Impose land mask
