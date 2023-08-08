@@ -36,6 +36,10 @@ jobs:
 #            envdef: linux
 #            minicond: Miniconda3-latest-Linux-x86_64.sh
     steps:
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
       - name: reset macos toolchain to commandlinetools
         shell: /bin/bash {0}
         if: contains( matrix.envdef, 'macos')
