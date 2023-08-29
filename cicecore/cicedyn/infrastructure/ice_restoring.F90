@@ -23,7 +23,7 @@
 
       implicit none
       private
-      public :: ice_HaloRestore_init, ice_HaloRestore
+      public :: ice_HaloRestore_init, ice_HaloRestore, ice_MaskRestore, ice_read_restoring_mask
 
       logical (kind=log_kind), public :: &
          restore_ice                 ! restore ice state if true
@@ -33,6 +33,9 @@
                                      ! 'initial'  => restore to initial ice state
                                      ! 'defined'  => restore to hardcoded values
                                      ! 'zero'     => restore to zero
+
+      logical (kind=log_kind), public :: &
+         restore_ice_mask            ! restore ice over mask if true
 
       !-----------------------------------------------------------------
       ! state of the ice for each category
@@ -45,6 +48,9 @@
 
       real (kind=dbl_kind), dimension (:,:,:,:,:), allocatable, public :: &
          trcrn_rest     ! tracers
+
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
+         iceRestMask     ! ice restoring mask
 
 !=======================================================================
 
@@ -81,7 +87,7 @@
 
    character(len=*), parameter :: subname = '(ice_HaloRestore_init)'
 
-   if (.not. restore_ice) return
+   if (.not. restore_ice .and. .not.restore_ice_mask) return
 
    call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
    call icepack_warnings_flush(nu_diag)
@@ -739,6 +745,155 @@
 
  end subroutine ice_HaloRestore
 
+!=======================================================================
+
+!  This subroutine is intended for restoring the ice state to desired
+!  values in all cells where restoring mask is true
+!  Note: This routine will need to be modified for nghost > 1.
+!        We assume padding occurs only on east and north edges.
+
+ subroutine ice_MaskRestore
+
+      use ice_blocks, only: block, get_block, nblocks_x, nblocks_y
+      use ice_calendar, only: dt
+      use ice_domain, only: nblocks, blocks_ice
+
+!-----------------------------------------------------------------------
+!
+!  local variables
+!
+!-----------------------------------------------------------------------
+
+   integer (int_kind) :: &
+     i,j,iblk,nt,n,      &! dummy loop indices
+     ilo,ihi,jlo,jhi,    &! beginning and end of physical domain
+     ntrcr
+
+   type (block) :: &
+     this_block  ! block info for current block
+
+   real (dbl_kind) :: &
+     secday,             &!
+     ctime                ! dt/trest
+
+   character(len=*), parameter :: subname = '(ice_MaskRestore)'
+
+   call ice_timer_start(timer_bound)
+   call icepack_query_parameters(secday_out=secday)
+   call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
+   call icepack_warnings_flush(nu_diag)
+   if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
+      file=__FILE__, line=__LINE__)
+
+!-----------------------------------------------------------------------
+!
+!  Initialize
+!
+!-----------------------------------------------------------------------
+
+      ! for now, use same restoring constant as for SST
+      if (trestore == 0) then
+         trest = dt          ! use data instantaneously
+      else
+         trest = real(trestore,kind=dbl_kind) * secday ! seconds
+      endif
+      ctime = dt/trest
+
+!-----------------------------------------------------------------------
+!
+!  Restore values in cells surrounding the grid
+!
+!-----------------------------------------------------------------------
+
+   !$OMP PARALLEL DO PRIVATE(iblk,ilo,ihi,jlo,jhi,this_block, &
+   !$OMP                     i,j,n,nt,ibc,ice_restore_masknpad)
+   do iblk = 1, nblocks
+      this_block = get_block(blocks_ice(iblk),iblk)         
+      ilo = this_block%ilo
+      ihi = this_block%ihi
+      jlo = this_block%jlo
+      jhi = this_block%jhi
+
+      do n = 1, ncat
+         do j = 1, ny_block
+            do i = 1, nx_block
+               aicen(i,j,n,iblk) = aicen(i,j,n,iblk) &
+                  + (aicen_rest(i,j,n,iblk)-aicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
+               vicen(i,j,n,iblk) = vicen(i,j,n,iblk) &
+                  + (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
+               vsnon(i,j,n,iblk) = vsnon(i,j,n,iblk) &
+                  + (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
+               do nt = 1, ntrcr
+                  trcrn(i,j,nt,n,iblk) = trcrn(i,j,nt,n,iblk) &
+                     + (trcrn_rest(i,j,nt,n,iblk)-trcrn(i,j,nt,n,iblk))*ctime * iceRestMask(i,j,iblk)
+               enddo
+            enddo
+         enddo
+      enddo
+   enddo ! iblk
+   !$OMP END PARALLEL DO
+
+   call ice_timer_stop(timer_bound)
+
+ end subroutine ice_MaskRestore
+
+!=======================================================================
+
+! Read restoring mask from netcdf
+!
+! author: FD 2023-09
+
+      subroutine ice_read_restoring_mask
+
+      use ice_communicate, only: my_task, master_task
+      use ice_fileunits, only: nu_diag
+      use ice_read_write
+      use ice_constants, only: field_loc_center, field_type_scalar
+      use ice_blocks, only: nx_block, ny_block
+      use ice_grid, only: hm
+
+      ! locals
+      integer (kind=int_kind) :: &
+         fid_mask        ! file id for netCDF file
+
+      character (char_len) :: &
+            fieldname    ! field name in netcdf file
+
+      character (char_len_long) :: &        ! input data file names
+            mask_file = 'ice_mask_restore.nc'
+
+      logical (kind=log_kind) :: diag=.true.
+
+
+      allocate (iceRestMask(nx_block,ny_block,max_blocks))
+
+
+      if (my_task == master_task) then
+
+          write (nu_diag,*) ' '
+          write (nu_diag,*) 'Restoring mask file: ', trim(mask_file)
+          call flush(nu_diag)
+
+          call ice_open_nc(mask_file,fid_mask)
+
+      endif
+
+      fieldname='mask'
+
+      call ice_read_nc(fid_mask,1,fieldname,iceRestMask,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      if (my_task == master_task) then
+         call ice_close_nc(fid_mask)
+         write(nu_diag,*) 'closing file ',TRIM(mask_file)
+         call flush(nu_diag)
+      endif
+
+      ! ensure mask is only one over wet points
+      iceRestMask(:,:,:) = iceRestMask(:,:,:) * hm(:,:,:)
+
+      end subroutine ice_read_restoring_mask
 !=======================================================================
 
       end module ice_restoring
