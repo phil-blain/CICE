@@ -823,10 +823,11 @@
                   + (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
                vsnon(i,j,n,iblk) = vsnon(i,j,n,iblk) &
                   + (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
-               do nt = 1, ntrcr
-                  trcrn(i,j,nt,n,iblk) = trcrn(i,j,nt,n,iblk) &
-                     + (trcrn_rest(i,j,nt,n,iblk)-trcrn(i,j,nt,n,iblk))*ctime * iceRestMask(i,j,iblk)
-               enddo
+! the following lines are kept commented until a physical value for tracers are given for the interior restoring fields
+!               do nt = 1, ntrcr
+!                  trcrn(i,j,nt,n,iblk) = trcrn(i,j,nt,n,iblk) &
+!                     + (trcrn_rest(i,j,nt,n,iblk)-trcrn(i,j,nt,n,iblk))*ctime * iceRestMask(i,j,iblk)
+!               enddo
             enddo
          enddo
       enddo
