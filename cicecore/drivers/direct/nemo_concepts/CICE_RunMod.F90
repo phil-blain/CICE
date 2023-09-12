@@ -153,7 +153,7 @@
           write_restart_bgc, write_restart_hbrine
       use ice_restart_driver, only: dumpfile
       use ice_restart_shared, only: restart, runtype
-      use ice_restoring, only: restore_ice, ice_HaloRestore
+      use ice_restoring, only: restore_ice, ice_HaloRestore, restore_ice_mask, ice_MaskRestore
       use ice_state, only: trcrn
       use ice_step_mod, only: prep_radiation, step_therm1, step_therm2, &
           update_state, step_dyn_horiz, step_dyn_ridge, step_radiation, &
@@ -204,6 +204,7 @@
       !-----------------------------------------------------------------
 
          if (restore_ice) call ice_HaloRestore
+         if (restore_ice_mask) call ice_MaskRestore
 
        !---------------------------------------------------------------
        ! 1st time step: initialize shortwave again (with correct forcing)

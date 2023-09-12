@@ -85,7 +85,7 @@
       use ice_init, only: input_data, init_state
       use ice_init_column, only: init_thermo_vertical, init_shortwave, init_zbgc, input_zbgc, count_tracers
       use ice_kinds_mod
-      use ice_restoring, only: ice_HaloRestore_init
+      use ice_restoring, only: ice_HaloRestore_init, restore_ice_mask, ice_read_restoring_mask
       use ice_timers, only: timer_total, init_ice_timers, ice_timer_start
       use ice_transport_driver, only: init_transport
       use lib_mpp, only:   mpi_comm_opa      ! NEMO MPI communicator
@@ -162,6 +162,8 @@
       call init_state           ! initialize the ice state
       call init_transport       ! initialize horizontal transport
       call ice_HaloRestore_init ! restored boundary conditions
+      if (restore_ice_mask) &
+         call ice_read_restoring_mask! read restoring mask if restore_ice_mask is true
 
       call icepack_query_parameters(skl_bgc_out=skl_bgc, z_tracers_out=z_tracers, &
           wave_spec_out=wave_spec)
