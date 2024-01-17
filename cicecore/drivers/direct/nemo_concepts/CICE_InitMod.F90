@@ -36,7 +36,7 @@
 !  Initialize the basic state, grid and all necessary parameters for
 !  running the CICE model.
 
-      subroutine cice_init
+      subroutine cice_init(mpi_comm)
 
       use ice_state, only: alloc_state
       use ice_flux_bgc, only: alloc_flux_bgc
@@ -68,14 +68,15 @@
       use ice_restoring, only: ice_HaloRestore_init, restore_ice_mask, ice_read_restoring_mask
       use ice_timers, only: timer_total, init_ice_timers, ice_timer_start
       use ice_transport_driver, only: init_transport
-      use lib_mpp, only:   mpi_comm_opa      ! NEMO MPI communicator
       use ice_nemo_concepts, only: alloc_nemo_concepts
+
+      integer(kind=int_kind), intent(in) :: mpi_comm ! NEMO MPI communicator
 
       logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
          tr_fsd, wave_spec
       character(len=*),parameter :: subname = '(cice_init)'
 
-      call init_communicate(mpi_comm_opa) ! initial setup for message passing
+      call init_communicate(mpi_comm) ! initial setup for message passing
       call init_fileunits       ! unit numbers
 
       call icepack_configure()  ! initialize icepack
