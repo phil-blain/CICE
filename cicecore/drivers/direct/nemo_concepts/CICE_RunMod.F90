@@ -210,10 +210,11 @@
        ! 1st time step: initialize shortwave again (with correct forcing)
        !---------------------------------------------------------------
 
-         if (istep == 1 .and. runtype == 'initial' .and. .not. restart) &
+         if (istep == 1 .and. runtype == 'initial' .and. .not. restart) then 
             call init_shortwave
 
             if (debug_model) call debug_ice(debug_model_iblk, 'post re-init_shortwave')
+         endif
 
       !-----------------------------------------------------------------
       ! initialize diagnostics and save initial state values
