@@ -238,9 +238,10 @@
       ! Scale radiation fields
       !-----------------------------------------------------------------
 
-            if (calc_Tsfc .and. ktherm >= 0) call prep_radiation (iblk)
-
-            if (debug_model) call debug_ice(iblk, 'post prep_radiation')
+            if (calc_Tsfc .and. ktherm >= 0) then
+               call prep_radiation (iblk)
+               if (debug_model) call debug_ice(iblk, 'post prep_radiation')
+            endif
 
       !-----------------------------------------------------------------
       ! thermodynamics and biogeochemistry
@@ -305,8 +306,10 @@
          !$OMP PARALLEL DO PRIVATE(iblk)
          do iblk = 1, nblocks
 
-            if (ktherm >= 0) call step_radiation (dt, iblk)
-            if (debug_model) call debug_ice(iblk, 'post step_radiation')
+            if (ktherm >= 0) then
+               call step_radiation (dt, iblk)
+               if (debug_model) call debug_ice(iblk, 'post step_radiation')
+            endif
 
       !-----------------------------------------------------------------
       ! get ready for coupling and the next time step
