@@ -25,7 +25,7 @@
 
       implicit none
       private
-      public :: CICE_Initialize, cice_init
+      public :: cice_init
 
 !=======================================================================
 
@@ -34,27 +34,7 @@
 !=======================================================================
 
 !  Initialize the basic state, grid and all necessary parameters for
-!  running the CICE model.  Return the initial state in routine
-!  export state.
-!  Note: This initialization driver is designed for standalone and
-!        CESM-coupled applications.  For other
-!        applications (e.g., standalone CAM), this driver would be
-!        replaced by a different driver that calls subroutine cice_init,
-!        where most of the work is done.
-
-      subroutine CICE_Initialize
-
-   !--------------------------------------------------------------------
-   ! model initialization
-   !--------------------------------------------------------------------
-
-      call cice_init
-
-      end subroutine CICE_Initialize
-
-!=======================================================================
-!
-!  Initialize CICE model.
+!  running the CICE model.
 
       subroutine cice_init
 
