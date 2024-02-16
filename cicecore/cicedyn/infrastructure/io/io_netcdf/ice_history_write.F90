@@ -99,7 +99,7 @@
       character (len=8) :: cdate
 
       ! 8 coordinate variables: TLON, TLAT, ULON, ULAT, NLON, NLAT, ELON, ELAT
-      INTEGER (kind=int_kind), PARAMETER :: ncoord = 8
+      INTEGER (kind=int_kind), PARAMETER :: ncoord = 0
 
       ! 4 vertices in each grid cell
       INTEGER (kind=int_kind), PARAMETER :: nverts = 4
