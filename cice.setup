@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+#set pd0 = `date -u "+%s%N"`
+
 set ICE_SANDBOX = `pwd`
 set ICE_VERSION = unknown
 if (-e cicecore/version.txt) then
@@ -13,7 +15,7 @@ set dash = "-"
 set spval = "UnDeFiNeD"
 set machcomp = ${spval}
 set machine = ${spval}
-set compilers = intel
+set envnames = intel
 set case = ${spval}
 set test = ${spval}
 set grid = gx3
@@ -34,6 +36,13 @@ set stime = `date -u "+%H%M%S"`
 set docase = 0
 set dotest = 0
 set dosuite = 0
+set coverage = 0       # code coverage measurement and reporting
+set coverageflag = false
+set suitebuild  = true
+set suitereuse  = true
+set suiterun    = false
+set suitesubmit = true
+set ignoreuserset = false
 
 if ($#argv < 1) then
   set helpheader = 1
@@ -78,7 +87,8 @@ SYNOPSIS
 
     --suite SUITE[,SUITE2] -m MACH --testid ID 
         [-e ENV1,ENV2][--acct ACCT][--bdir DIR][--bgen DIR]
-        [--bcmp DIR][--tdir PATH][--report]
+        [--bcmp DIR][--tdir PATH][--report || --coverage]
+        [--setup-only || --setup-build || --setup-build-run || --setup-build-submit]
 
 DESCRIPTION
     --help, -h : help
@@ -86,11 +96,12 @@ DESCRIPTION
     --setvers  : updates cice version number in sandbox
     --case, -c : case, case directory/name (not with --test or --suite)
     --mach, -m : machine, machine name (required)
-    --env,  -e : compiler(s), comma separated (default = $compilers)
+    --env,  -e : compilation environment name(s), comma separated (default = $envnames)
     --pes,  -p : tasks x threads [x blocksize_x x blocksize_y [x maxblocks]] (default is ${pesx})
     --acct     : account number for the batch submission
     --grid, -g : grid, grid (default = ${grid})
     --set,  -s : case option setting(s), comma separated (default = " ")
+    --ignore-user-set: ignore ~/.cice_set if it exists
     --queue    : queue for the batch submission
 
     For testing
@@ -104,6 +115,12 @@ DESCRIPTION
     --testid   : test ID, user-defined id for testing (REQUIRED with --test or --suite)
     --diff     : generate comparison against another case
     --report   : automatically post results when tests are complete
+    --coverage : generate and report test coverage metrics when tests are complete,
+                 requires GNU compiler (ie. normally --env gnu)
+    --setup-only         : for suite, setup testcases, no build, no submission
+    --setup-build        : for suite, setup and build testcases, no submission
+    --setup-build-run    : for suite, setup, build, and run interactively
+    --setup-build-submit : for suite, setup, build, and submit (default behavior)
 
 EXAMPLES
     cice.setup --version
@@ -122,44 +139,45 @@ SEE ALSO
 EOF1
 
 if ($helpheader > 1) then
-cat << EOF1
+  cat << EOF1
 
       Available --mach and --env combinations are in configuration/scripts/machines and include:
 EOF1
-      set soptions1 = `ls -1 configuration/scripts/machines | grep Macros | sed 's/Macros.//g' `
-      set soptions = `echo $soptions1 | fmt -1 | sort `
-      foreach sopt ($soptions)
-        echo "             $sopt"
-      end
-cat << EOF1
+  set soptions1 = `ls -1 configuration/scripts/machines | grep Macros | sed 's/Macros.//g' `
+  set soptions = `echo $soptions1 | fmt -1 | sort `
+  foreach sopt ($soptions)
+    echo "             $sopt"
+  end
+
+  cat << EOF1
 
       Available --set options are in configuration/scripts/options and include:
 EOF1
-      set soptions1 = `ls -1 configuration/scripts/options | grep set_ | sed 's/set_nml.//g' | sed 's/set_env.//g' | sed 's/set_files.//g' `
-      set soptions = `echo $soptions1 | fmt -1 | sort -u `
-      foreach sopt ($soptions)
-        echo "             $sopt"
-      end
+  set soptions1 = `ls -1 configuration/scripts/options | grep set_ | sed 's/set_nml.//g' | sed 's/set_env.//g' | sed 's/set_files.//g' `
+  set soptions = `echo $soptions1 | fmt -1 | sort -u `
+  foreach sopt ($soptions)
+    echo "             $sopt"
+  end
 
-cat << EOF1
+  cat << EOF1
 
       Available tests are in configuration/scripts/tests and include:
 EOF1
-      set soptions1 = `ls -1 configuration/scripts/tests | grep test_ | grep script | sed 's/test_//g' | sed 's/.script//g' `
-      set soptions = `echo $soptions1 | fmt -1 | sort `
-      foreach sopt ($soptions)
-        echo "             $sopt"
-      end
+  set soptions1 = `ls -1 configuration/scripts/tests | grep test_ | grep script | sed 's/test_//g' | sed 's/.script//g' `
+  set soptions = `echo $soptions1 | fmt -1 | sort `
+  foreach sopt ($soptions)
+    echo "             $sopt"
+  end
 
-cat << EOF1
+  cat << EOF1
 
       Available sets of predefined suites are in configurations/scripts/tests and include:
 EOF1
-      set soptions1 = `ls -1 configuration/scripts/tests | grep "\.ts" | sed 's/\.ts//g' `
-      set soptions = `echo $soptions1 | fmt -1 | sort `
-      foreach sopt ($soptions)
-        echo "             $sopt"
-      end
+  set soptions1 = `ls -1 configuration/scripts/tests | grep "\.ts" | sed 's/\.ts//g' `
+  set soptions = `echo $soptions1 | fmt -1 | sort `
+  foreach sopt ($soptions)
+    echo "             $sopt"
+  end
 
 endif
 exit -1
@@ -215,15 +233,53 @@ while (1)
     set report = 1
     shift argv
 
+  else if ("$option" == "--coverage") then
+    set coverage = 1
+    set coverageflag = true
+    set suitereuse  = false
+    shift argv
+
+  else if ("$option" == "--setup-only") then
+    set suitebuild  = false
+    set suitereuse  = true
+    set suiterun    = false
+    set suitesubmit = false
+    shift argv
+
+  else if ("$option" == "--setup-build") then
+    set suitebuild  = true
+    set suitereuse  = true
+    set suiterun    = false
+    set suitesubmit = false
+    shift argv
+
+  else if ("$option" == "--setup-build-run") then
+    set suitebuild  = true
+    set suitereuse  = true
+    set suiterun    = true
+    set suitesubmit = false
+    shift argv
+
+  else if ("$option" == "--setup-build-submit") then
+    set suitebuild  = true
+    set suitereuse  = true
+    set suiterun    = false
+    set suitesubmit = true
+    shift argv
+
+  else if ("$option" == "--ignore-user-set") then
+    set ignoreuserset = true
+    shift argv
+
 # arguments with settings
   else
     shift argv
     if ( $#argv < 1 ) then
-      echo "${0}: ERROR1 in $option"
+      echo "${0}: ERROR in $option, unsupported or missing an argument"
       exit -1
     endif
-    if ($argv[1] =~ $dash* ) then
-      echo "${0}: ERROR2 in $option"
+    if ("$argv[1]" =~ "$dash*" ) then
+      echo "${0}: ERROR in $option, possibly missing an argument"
       exit -1
     endif
 
@@ -233,7 +289,7 @@ while (1)
     else if ("$option" =~ --mach* || "$option" == "-m") then
       set machine = $argv[1]
     else if ("$option" =~ --env* || "$option" == "-e") then
-      set compilers = $argv[1]
+      set envnames = $argv[1]
     else if ("$option" == "--test") then
       set test = $argv[1]
       set dotest = 1
@@ -288,26 +344,64 @@ if (${dosum} > 1) then
   exit -1
 endif
 
-if (${dosuite} == 0) then
-  if ("$compilers" =~ "*,*") then
-    echo "${0}: ERROR in arguments, cannot set multiple compilers without --suite"
-    exit -1
-  else
-    set compiler = ${compilers}
-    set machcomp = ${machine}_${compiler}
-  endif
+if ($coverage == 1 && $report == 1) then
+  echo "${0}: ERROR in arguments, not recommmended to set both --coverage and --report"
+  exit -1
 endif
 
-# tcraig, lets find another way to validate argument
-#if (${test} != ${spval} && ${test} != 'smoke' && ${test} != '10day' && ${test} != 'annual' \
-# && ${test} != 'restart') then
-#  echo "${0}: ERROR in arguments.  ${test} is not a valid test"
-#  exit -1
-#endif
+if ($coverage == 1 && "$envnames" !~ "gnu*") then
+  echo "${0}: ERROR in arguments, must use --env gnu* with --coverage"
+  exit -1
+endif
+
+if ($coverage == 1 && `where curl` == "" && `where wget` == "") then
+  echo "${0}: ERROR 'curl' or 'wget' is required for --coverage"
+  exit -1
+endif
+
+if (${dosuite} == 0) then
+  if ($report == 1) then
+    echo "${0}: ERROR in arguments, must use --suite with --report"
+    exit -1
+  endif
+  if ($coverage == 1) then
+    echo "${0}: ERROR in arguments, must use --suite with --coverage"
+    exit -1
+  endif
+  if ("$envnames" =~ "*,*") then
+    echo "${0}: ERROR in arguments, cannot set multiple envnames without --suite"
+    exit -1
+  else
+    set envname = ${envnames}
+    set machcomp = ${machine}_${envname}
+  endif
+else
+  if ($coverage == 1) then
+    if ("$envnames" =~ "*,*") then
+      echo "${0}: ERROR in arguments, cannot set multiple envnamess with --coverage"
+      exit -1
+    else
+      set envname = ${envnames}
+      set machcomp = ${machine}_${envname}
+    endif
+  endif
+endif
 
 if ((${dosuite} == 1 || ${dotest} == 1) && ${testid} == ${spval}) then
   echo "${0}: ERROR in arguments.  --testid must be passed if using --suite or --test"
   exit -1
+endif
+
+# This creates a new sandbox and modifies the source code for "improved" lcov analysis
+# Turn this if block off if you don't want coverage to do that
+if ($coverage == 1) then
+  set sandbox_lcov = ${ICE_SANDBOX}/../cice_lcov_${sdate}-${stime}
+  cp -p -r ${ICE_SANDBOX} ${sandbox_lcov}
+  echo "shifting to sandbox = ${sandbox_lcov}"
+  set ICE_SANDBOX = ${sandbox_lcov}
+  set ICE_SCRIPTS = "${ICE_SANDBOX}/configuration/scripts"
+  cd ${ICE_SANDBOX}
+  ${ICE_SCRIPTS}/tests/lcov_modify_source.sh
 endif
 
 #---------------------------------------------------------------------
@@ -322,7 +416,7 @@ endif
 if ( ${tdir} != ${spval} ) then
   set tsdir = ${tdir}
 endif
-if (-e $tsfile) then
+if (-e ${tsfile}) then
   echo "${0}: ERROR in tsfile, this should never happen"
   exit -1
 endif
@@ -338,6 +432,17 @@ set vers = ${ICE_VERSION}
 set shhash = `echo ${hash} | cut -c 1-10`
 
 if ( ${dosuite} == 0 ) then
+  # grab user defined default sets
+  if ("${ignoreuserset}" == "false" && -e ~/.cice_set) then
+    set setsu1 = `cat ~/.cice_set`
+    # get rid of spaces if they exist!
+    set setsuser = `echo ${setsu1} | sed 's/ //g'`
+    if ( ${sets} == "" ) then
+      set sets = "${setsuser}"
+    else
+      set sets = "${setsuser},${sets}"
+    endif
+  endif
   set teststring = "${test} ${grid} ${pesx} ${sets}"
   if ( $bfbcomp != ${spval} ) then
     if ( ${sets} == "" ) then
@@ -350,19 +455,34 @@ if ( ${dosuite} == 0 ) then
   set sets = ""
 
 else
-  set tarrays = `echo ${testsuite} | sed 's/,/ /g' | fmt -1 | sort -u`
+  # generate unique set of suites in tarrays in order they are set
+  set tarrays0 = `echo ${testsuite} | sed 's/,/ /g' | fmt -1 `
+  #echo "${0}: tarrays0 = ${tarrays0}"
+  set tarrays = $tarrays0[1]
+  foreach t1 ( ${tarrays0} )
+    set found = 0
+    foreach t2 ( ${tarrays} )
+      if ( ${t1} == ${t2} ) then
+         set found = 1
+      endif
+    end
+    if ( ${found} == 0 ) then
+       set tarrays = ( ${tarrays} ${t1} )
+    endif
+  end
+  #echo "${0}: tarrays = ${tarrays}"
+  set testsuitecnt = 0
   foreach tarray ( ${tarrays} )
+    @ testsuitecnt = ${testsuitecnt} + 1
     if (-e ${tarray}) then
       cat ${tarray} >> $tsfile
     else if (-e ${tarray}.ts) then
       cat ${tarray}.ts >> $tsfile
-    else 
-      if (-e ${ICE_SCRIPTS}/tests/${tarray}.ts) then
-        cat ${ICE_SCRIPTS}/tests/${tarray}.ts >> $tsfile
-      else
-        echo "${0}: ERROR, cannot find testsuite file ${tarray}, also checked ${ICE_SCRIPTS}/tests/${tarray}.ts"
-        exit -1
-      endif
+    else if (-e ${ICE_SCRIPTS}/tests/${tarray}.ts) then
+      cat ${ICE_SCRIPTS}/tests/${tarray}.ts >> $tsfile
+    else
+      echo "${0}: ERROR, cannot find testsuite file ${tarray}, also checked ${ICE_SCRIPTS}/tests/${tarray}.ts"
+      exit -1
     endif
   end
 
@@ -377,18 +497,45 @@ else
     exit -1
   endif
   cp -f ${ICE_SCRIPTS}/tests/report_results.csh ${tsdir}
+  cp -f ${ICE_SCRIPTS}/tests/create_fails.csh ${tsdir}
   cp -f ${ICE_SCRIPTS}/tests/poll_queue.csh ${tsdir}
 
-  foreach file (${tsdir}/suite.run ${tsdir}/suite.submit)
-  cat >! $file << EOF0
+  cat >! ${tsdir}/suite.submit << EOF0
 #!/bin/csh -f
 
 set nonomatch && rm -f ciceexe.* && unset nonomatch
+rm -f suite.jobs
+
+set dobuild  = true
+set doreuse  = true
+set dorun    = false
+set dosubmit = true
+if (\$?SUITE_BUILD) then
+  set dobuild  = "\${SUITE_BUILD}"
+endif
+if (\$?SUITE_REUSEBUILD) then
+  set doreuse = "\${SUITE_REUSEBUILD}"
+endif
+if (\$?SUITE_RUN) then
+  set dorun    = "\${SUITE_RUN}"
+endif
+if (\$?SUITE_SUBMIT) then
+  set dosubmit = "\${SUITE_SUBMIT}"
+endif
+
+echo \${0}: dobuild  = \${dobuild}
+echo \${0}: doreuse  = \${doreuse}
+echo \${0}: dorun    = \${dorun}
+echo \${0}: dosubmit = \${dosubmit}
+
+if (\${dorun} == true && \${dosubmit} == true) then
+  echo \${0}: ERROR dorun and dosubmit should not both be true
+  exit -1
+endif
 
 EOF0
-  end
 
-cat >! ${tsdir}/results.csh << EOF0
+  cat >! ${tsdir}/results.csh << EOF0
 #!/bin/csh -f
 rm -f results.log
 echo "#------- " >> results.log
@@ -398,6 +545,7 @@ echo "#hash = ${hash}" >> results.log
 echo "#hshs = ${shhash}" >> results.log
 echo "#hshu = ${hashuser}" >> results.log
 echo "#hshd = ${hashdate}" >> results.log
+echo "#suit = ${testsuite}" >> results.log
 echo "#date = ${cdate}" >> results.log
 echo "#time = ${ctime}" >> results.log
 echo "#mach = ${machine}" >> results.log
@@ -406,21 +554,49 @@ echo "#vers = ${vers}" >> results.log
 echo "#------- " >> results.log
 EOF0
 
-  chmod +x ${tsdir}/suite.run
+cat >! ${tsdir}/report_codecov.csh << EOF0
+#!/bin/csh -f
+
+source ${ICE_SCRIPTS}/machines/env.${machcomp}
+
+set rn0 = "${sdate}-${stime}:${shhash}:${testsuitecnt}:${testsuite}"
+set rn1 = \`echo \${rn0} | sed -e 's/ //g'\`
+set report_name = \`echo \${rn1} | sed -e 's/_suite//g'\`
+
+#for codecov
+set use_curl = 1
+# define CODECOV_TOKEN env variable
+if !(\$?CODECOV_TOKEN) then
+  if (-e ~/.codecov_cice_token) then
+    source ~/.codecov_cice_token
+  endif
+  if !(\$?CODECOV_TOKEN) then
+    echo "\${0}: ERROR, CODECOV_TOKEN env variable not defined"
+    exit 2
+  endif
+endif
+
+#for lcov
+set lcovalist = ""
+
+EOF0
+
   chmod +x ${tsdir}/suite.submit
   chmod +x ${tsdir}/results.csh
+  chmod +x ${tsdir}/report_codecov.csh
+  cp -p -f ${tsdir}/report_codecov.csh ${tsdir}/report_lcov.csh
 
 endif
 
 #-------------------------------------------------------------------
 # Loop over cases/tests
 
-set ncompilers = "`echo $compilers | sed -e 's/,/ /g'`"
+set nenvnames = "`echo $envnames | sed -e 's/,/ /g'`"
 
-# check that machines and compilers are valid before starting big loop
+# check that machines and envnames are valid before starting big loop
 set doabort = false
-foreach compiler ( $ncompilers )
-  set machcomp = ${machine}_${compiler}
+foreach envname ( $nenvnames )
+  set machcomp = ${machine}_${envname}
   foreach file (env.${machcomp} Macros.${machcomp})
     if !(-e ${ICE_SCRIPTS}/machines/$file) then
       echo "${0}: ERROR, ${ICE_SCRIPTS}/machines/$file not found"
@@ -435,8 +611,8 @@ endif
 # Create a new sets_base variable to store sets passed to cice.setup
 set sets_base = "${sets}"
 set bfbcomp_base = "$bfbcomp"
-foreach compiler ( $ncompilers )
-  set machcomp = ${machine}_${compiler}
+foreach envname ( $nenvnames )
+  set machcomp = ${machine}_${envname}
   foreach line ( "`cat $tsfile`" )
 
     # Check if line is a comment line
@@ -445,11 +621,11 @@ foreach compiler ( $ncompilers )
       continue
     # Check if line is a sleep line, can only happen with suites
     else if ( $line:q =~ 'sleep'*) then
-cat >> ${tsdir}/suite.submit << EOF
+      cat >> ${tsdir}/suite.submit << EOF
+
 echo "-------test--------------"
 echo "$line:q"
 $line:q
-
 EOF
       echo "adding sleep line: $line"
       echo "" 
@@ -458,6 +634,15 @@ EOF
       continue
     endif
 
+    # unset env variables that might not exist in env machine file
+    # to avoid any carry over during multi envname suites
+    unsetenv ICE_MACHINE_MAXTHREADS
+    unsetenv ICE_MACHINE_MAXPES
+    unsetenv ICE_MACHINE_QUIETMODE
+    unsetenv ICE_MACHINE_CPPDEFS
+    unsetenv ICE_MACHINE_QSTAT
+    unsetenv ICE_MACHINE_MACHINFO
+    unsetenv ICE_MACHINE_ENVINFO
     source ${ICE_SCRIPTS}/machines/env.${machcomp} -nomodules || exit 2
 
     # Obtain the test name, sets, grid, and PE information from .ts file
@@ -468,7 +653,7 @@ EOF
     set bfbcomp_tmp = `echo $line | cut -d' ' -f5`
 
     # Append sets from .ts file to the $sets variable
-    set sets = "$sets_base,$sets_tmp"
+    set sets = "$sets_tmp,$sets_base"
 
     # Create a new bfbcomp_base variable to store bfbcomp passed to cice.setup
     # Use bfbcomp_base or bfbcomp_tmp
@@ -476,11 +661,6 @@ EOF
       set bfbcomp = "$bfbcomp_base"
     else
       set bfbcomp = "$bfbcomp_tmp"
-    endif
-
-    set fbfbcomp = ${spval}
-    if ($bfbcomp != ${spval}) then
-      set fbfbcomp = ${machcomp}_${bfbcomp}
     endif
 
     #------------------------------------------------------------
@@ -585,11 +765,18 @@ EOF
     endif
 
     set testname_noid = ${spval}
+
     # create case for test cases
+
+    set fbfbcomp = ${spval}
+    if ($bfbcomp != ${spval}) then
+      set fbfbcomp = ${machcomp}_${bfbcomp}
+    endif
+
     if (${docase} == 0) then
       set soptions = ""
       # Create sorted array and remove duplicates and "none"
-      set setsarray = `echo ${sets} | sed 's/,/ /g' | fmt -1 | sort -u`
+      set setsarray = `echo ${sets_tmp} | sed 's/,/ /g' | fmt -1 | sort -u`
       if ("${setsarray}" != "") then
         foreach field (${setsarray})
           if (${field} != "none") then
@@ -597,11 +784,27 @@ EOF
           endif
         end
       endif
+      # Add options from command line, sort and remove duplicates
+      set soptions_base = ""
+      set setsarray_base = `echo ${sets_base} | sed 's/,/ /g' | fmt -1 | sort -u`
+      if ("${setsarray_base}" != "") then
+        foreach field (${setsarray_base})
+          set soptions = ${soptions}"_"${field}
+          set soptions_base = ${soptions_base}"_"${field}
+        end
+      endif
       # soptions starts with _
       set testname_noid = "${machcomp}_${test}_${grid}_${pesx}${soptions}"
       set testname_base = "${machcomp}_${test}_${grid}_${pesx}${soptions}.${testid}"
       set testname = "${tsdir}/${testname_base}"
       set case = ${testname}
+
+      if (${dosuite} == 1) then
+        # Add -s flags in cice.setup to bfbcomp name
+        if ($bfbcomp != ${spval}) then
+          set fbfbcomp = ${machcomp}_${bfbcomp}${soptions_base}
+        endif
+      endif
     endif
 
     if (-d ${case}) then
@@ -630,8 +833,8 @@ EOF
     # set default test output as failure
     if (${docase} == 0) then
       echo "#---" >! test_output
-      echo "FAIL ${testname_noid} build" >> test_output
-      echo "FAIL ${testname_noid} run" >> test_output
+      echo "PEND ${testname_noid} build" >> test_output
+      echo "PEND ${testname_noid} run" >> test_output
     endif
 
     # from basic script dir to case
@@ -640,7 +843,7 @@ EOF
         echo "${0}: ERROR, ${ICE_SCRIPTS}/$file not found"
         exit -1
       endif
-      cp -f -p ${ICE_SCRIPTS}/$file ${casedir}
+      cp -f -p ${ICE_SCRIPTS}/$file ${casedir}/
     end
 
     # from machines dir to case
@@ -649,7 +852,7 @@ EOF
         echo "${0}: ERROR, ${ICE_SCRIPTS}/machines/$file not found"
         exit -1
       endif
-      cp -f -p ${ICE_SCRIPTS}/machines/$file ${casedir}
+      cp -f -p ${ICE_SCRIPTS}/machines/$file ${casedir}/
     end
 
     # from basic script dir to casescr
@@ -658,7 +861,16 @@ EOF
         echo "${0}: ERROR, ${ICE_SCRIPTS}/$file not found"
         exit -1
       endif
-      cp -f -p ${ICE_SCRIPTS}/$file ${casescr}
+      cp -f -p ${ICE_SCRIPTS}/$file ${casescr}/
+    end
+
+    # from tests dir to casescr
+    foreach file (cice.results.csh cice.codecov.csh cice.lcov.csh)
+      if !(-e ${ICE_SCRIPTS}/tests/$file) then
+        echo "${0}: ERROR, ${ICE_SCRIPTS}/$file not found"
+        exit -1
+      endif
+      cp -f -p ${ICE_SCRIPTS}/tests/$file ${casescr}/
     end
 
     cd ${casedir}
@@ -666,6 +878,11 @@ EOF
     set quietmode = false
     if ($?ICE_MACHINE_QUIETMODE) then
       set quietmode = ${ICE_MACHINE_QUIETMODE}
+    endif
+
+    set cppdefs = ""
+    if ($?ICE_MACHINE_CPPDEFS) then
+      set cppdefs = ${ICE_MACHINE_CPPDEFS}
     endif
 
     if (${acct} == ${spval}) then
@@ -683,6 +900,8 @@ EOF
         set queue = ${ICE_MACHINE_QUEUE}
       endif
     endif
+
+    set rundir = ${ICE_MACHINE_WKDIR}/${casename}
 
     #------------------------------------------------------------
     # Compute a default blocksize
@@ -704,10 +923,14 @@ EOF
     echo "ICE_CASENAME = ${casename}"
     echo "ICE_CASEDIR  = ${casedir}"
     echo "ICE_MACHINE  = ${machine}"
-    echo "ICE_COMPILER = ${compiler}"
+    echo "ICE_ENVNAME  = ${envname}"
+    echo "ICE_RUNDIR   = ${rundir}"
     echo "ICE_PES      = ${task}x${thrd}"
     echo "ICE_GRID     = ${grid} (${ICE_DECOMP_NXGLOB}x${ICE_DECOMP_NYGLOB}) blocksize=${ICE_DECOMP_BLCKX}x${ICE_DECOMP_BLCKY}x${ICE_DECOMP_MXBLCKS}"
     echo "ICE_DECOMP   = ${ICE_DECOMP_DECOMP} ${ICE_DECOMP_DSHAPE}"
+    if ($fbfbcomp != ${spval}) then
+      echo "ICE_BFBCOMP  = ${fbfbcomp}"
+    endif
 
     #------------------------------------------------------------
     # Copy in and update cice.settings and ice_in files
@@ -720,9 +943,21 @@ EOF
     if (-e ${fimods}) rm ${fimods}
     if (-e ${fsmods}) rm ${fsmods}
 
-cat >! ${fimods} << EOF1
-# cice.setup settings
+    # Use an existing ice_in file from the suite if it exists
+    # to reduce time spent in parse_namelist
+    set skip_parse_namelist = spval
+    if (${dosuite} == 1) then
+      set iceinfn = ../ice_in_save_${grid}${soptions}
+      if (-e ${iceinfn}) then
+        echo "use ${iceinfn}"
+        cp ${iceinfn} ice_in
+        set skip_parse_namelist = true
+      endif
+    endif
 
+    # Set decomp info in namelist
+    cat >! ${fimods} << EOF1
+# cice.setup settings
 nprocs            = ${task}
 nx_global         = ${ICE_DECOMP_NXGLOB}
 ny_global         = ${ICE_DECOMP_NYGLOB}
@@ -749,29 +984,24 @@ EOF1
       set baseCom = `ls -t $basedir_tmp | head -1`
     endif
 
-cat >! ${fsmods} << EOF1
+    cat >! ${fsmods} << EOF1
 # cice.setup settings
-
 setenv ICE_SANDBOX  ${ICE_SANDBOX}
 setenv ICE_SCRIPTS  ${ICE_SCRIPTS}
 setenv ICE_CASENAME ${casename}
 setenv ICE_CASEDIR  ${casedir}
 setenv ICE_MACHINE  ${machine}
-setenv ICE_COMPILER ${compiler}
+setenv ICE_ENVNAME  ${envname}
 setenv ICE_MACHCOMP ${machcomp}
-setenv ICE_RUNDIR   ${ICE_MACHINE_WKDIR}/${casename}
+setenv ICE_RUNDIR   ${rundir}
 setenv ICE_GRID     ${grid}
-#setenv ICE_NXGLOB   ${ICE_DECOMP_NXGLOB}  # moved to namelist
-#setenv ICE_NYGLOB   ${ICE_DECOMP_NYGLOB}  # moved to namelist
 setenv ICE_NTASKS   ${task}
 setenv ICE_NTHRDS   ${thrd}
-#setenv ICE_MXBLCKS  ${ICE_DECOMP_MXBLCKS}  # moved to namelist
-#setenv ICE_BLCKX    ${ICE_DECOMP_BLCKX}  # moved to namelist
-#setenv ICE_BLCKY    ${ICE_DECOMP_BLCKY}  # moved to namelist
 setenv ICE_BASELINE ${basedir_tmp}
 setenv ICE_BASEGEN  ${baseGen}
 setenv ICE_BASECOM  ${baseCom}
 setenv ICE_SPVAL    ${spval}
+setenv ICE_CPPDEFS  ${cppdefs}
 setenv ICE_QUIETMODE  ${quietmode}
 setenv ICE_TEST     ${test}
 setenv ICE_TESTNAME ${testname_noid}
@@ -779,6 +1009,7 @@ setenv ICE_TESTID   ${testid}
 setenv ICE_BFBCOMP  ${fbfbcomp}
 setenv ICE_ACCOUNT  ${acct}
 setenv ICE_QUEUE    ${queue}
+setenv ICE_COVERAGE ${coverageflag}
 EOF1
 
     if (${sets} != "") then
@@ -823,47 +1054,59 @@ EOF1
 
     foreach name (${grid} $setsx)
       set found = 0
-      if (-e ${ICE_SCRIPTS}/options/set_nml.${name}) then
 
-cat >> ${fimods} << EOF2
+      if (-e ${ICE_SCRIPTS}/options/set_nml.${name}) then
+        cat >> ${fimods} << EOF2
 
 # set_nml.${name}
-
 EOF2
-        cat ${ICE_SCRIPTS}/options/set_nml.${name} >> ${fimods}
-
-cat >> ${fimods} << EOF2
-
+        if ("${skip_parse_namelist}" == "true") then
+          # need to make sure the decomp info from the set_nml is picked up.  each case
+          # has a slightly different decomp that is independent of the ice_in_save file.
+          # compute that then overwrite by set_nml as needed.
+          grep -i "distribution_type" ${ICE_SCRIPTS}/options/set_nml.${name} >> ${fimods}
+          grep -i "processor_shape"   ${ICE_SCRIPTS}/options/set_nml.${name} >> ${fimods}
+          cat >> ${fimods} << EOF2
+#   using saved ice_in
 EOF2
+        else
+          cat ${ICE_SCRIPTS}/options/set_nml.${name} >> ${fimods}
+          cat >> ${fimods} << EOF2
+EOF2
+        endif
         echo "adding namelist mods set_nml.${name}"
         echo "`date` ${0} adding namelist modes set_nml.${name}" >> ${casedir}/README.case
         set found = 1
       endif
+
       if (-e ${ICE_SCRIPTS}/options/set_env.${name}) then
 
-cat >> ${fsmods} << EOF2
+        cat >> ${fsmods} << EOF2
 
 # set_env.${name}
-
 EOF2
-
         cat ${ICE_SCRIPTS}/options/set_env.${name} >> ${fsmods}
-
-cat >> ${fsmods} << EOF2
-
+        cat >> ${fsmods} << EOF2
 EOF2
-
         echo "adding env mods set_env.${name}"
         echo "`date` ${0} adding namelist modes set_env.${name}" >> ${casedir}/README.case
         set found = 1
       endif
+
       if (${found} == 0) then
         echo "${0}: ERROR, ${ICE_SCRIPTS}/options/set_[nml,env].${name} not found"
         exit -1
       endif
     end
 
+#set pd1 = `date -u "+%s%N"`
+#@ pdd = ( $pd1 - $pd0 ) / 1000000
+#echo "tcxp b4 parse $pdd"
     ${casescr}/parse_settings.sh cice.settings ${fsmods}
+    if ($status != 0) then
+      echo "${0}: ERROR, parse_settings.sh aborted"
+      exit -1
+    endif
     ${casescr}/parse_namelist.sh ice_in ${fimods}
     if ($status != 0) then
       echo "${0}: ERROR, parse_namelist.sh aborted"
@@ -872,6 +1115,20 @@ EOF2
     source ./cice.settings
     source ./env.${machcomp} -nomodules || exit 2
     ${casescr}/parse_namelist_from_env.sh ice_in
+    if ($status != 0) then
+      echo "${0}: ERROR, parse_namelist_from_env.sh aborted"
+      exit -1
+    endif
+#set pd1 = `date -u "+%s%N"`
+#@ pdd = ( $pd1 - $pd0 ) / 1000000
+#echo "tcxp after parse $pdd"
+
+    # Save ice_in in the suite to reduce time spent in parse_namelist
+    if (${dosuite} == 1) then
+      if !(-e ${iceinfn}) then
+        cp ice_in ${iceinfn}
+      endif
+    endif
 
     #------------------------------------------------------------
     # Generate run script
@@ -896,9 +1153,6 @@ EOF2
         exit -1
       endif
 
-#      # Initial test_output file
-#      echo "#---" >! test_output
-#      echo "PEND ${testname_noid} " >> test_output
     endif
 
     #------------------------------------------------------------
@@ -906,34 +1160,55 @@ EOF2
 
     if ( ${dosuite} == 1 ) then
       cd ${ICE_SANDBOX}
-      # Write build and run commands to suite.run and suite.submit
+      # Write build and run commands to suite.submit
 
-cat >> ${tsdir}/results.csh << EOF
+      cat >> ${tsdir}/results.csh << EOF
 cat ${testname_base}/test_output >> results.log
 EOF
-  foreach file (${tsdir}/suite.run ${tsdir}/suite.submit)
-    cat >> $file  << EOF
+
+      cat >> ${tsdir}/report_codecov.csh << EOF
+mkdir ${testname_base}/codecov_output
+cp ${rundir}/compile/*.{gcno,gcda} ${testname_base}/codecov_output/
+
+EOF
+
+      cat >> ${tsdir}/report_lcov.csh << EOF
+lcov --gcov-tool gcov -c -d ${rundir}/compile -o ${testname_base}/lcov.info
+if (-s ${testname_base}/lcov.info) then
+  set lcovalist = "\${lcovalist} -a ${testname_base}/lcov.info"
+endif
+
+EOF
+
+      cat >> ${tsdir}/suite.submit << EOF
+
 echo "-------test--------------"
 echo "${testname_base}"
 cd ${testname_base}
 source ./cice.settings
-set ciceexe = "../ciceexe.\${ICE_COMPILER}.\${ICE_COMMDIR}.\${ICE_BLDDEBUG}.\${ICE_THREADED}.\${ICE_IOTYPE}"
-./cice.build --exe \${ciceexe}
-if !(-e \${ciceexe}) cp -p \${ICE_RUNDIR}/cice \${ciceexe}
-EOF
-  end
-  cat >> ${tsdir}/suite.submit << EOF
-./cice.submit | tee -a ../suite.jobs
-EOF
-  cat >> ${tsdir}/suite.run << EOF
-./cice.test
-EOF
-  foreach file (${tsdir}/suite.run ${tsdir}/suite.submit)
-    cat >> $file << EOF
+set bldstat = 0
+if (\${dobuild} == true) then
+   if (\${doreuse} == true) then
+     set ciceexe = "../ciceexe.\${ICE_TARGET}.\${ICE_ENVNAME}.\${ICE_COMMDIR}.\${ICE_BLDDEBUG}.\${ICE_THREADED}.\${ICE_IOTYPE}.\${ICE_SNICARHC}"
+     ./cice.build --exe \${ciceexe}
+     set bldstat = \${status}
+     if !(-e \${ciceexe}) cp -p \${ICE_RUNDIR}/cice \${ciceexe}
+   else
+     ./cice.build
+     set bldstat = \${status}
+   endif
+endif
+if (\$bldstat == 0) then
+  if (\${dosubmit} == true) then
+    set jobid = \`./cice.submit\`
+    echo "\$jobid"
+    echo "\$jobid  \${ICE_TESTNAME}  " >> ../suite.jobs
+  else if (\${dorun} == true) then
+    ./cice.test
+  endif
+endif
 cd ..
-
 EOF
-  end
     
       # Reset case for the next test in suite
       set case = ${spval}
@@ -943,9 +1218,13 @@ EOF
       echo "" 
     endif
 
+#set pd1 = `date -u "+%s%N"`
+#@ pdd = ( $pd1 - $pd0 ) / 1000000
+#echo "tcxp case done $pdd"
+
    # This is the foreach end for the testsuite
   end
-# This is the foreach end for the compilers
+# This is the foreach end for the envnames
 end
 
 #-----------------------------------------------------
@@ -954,53 +1233,33 @@ end
 if ( ${dosuite} == 1 ) then
 
   # Delete reused ciceexe files at the end to save space
-foreach file (${tsdir}/suite.run ${tsdir}/suite.submit)
-cat >> $file << EOF0
+  cat >> ${tsdir}/suite.submit << EOF0
 
 set nonomatch && rm -f ciceexe.* && unset nonomatch
+set nonomatch && rm -f ice_in_save* && unset nonomatch
 
 EOF0
-end
 
-  # Add code to results.csh to count the number of failures
-cat >> ${tsdir}/results.csh << EOF
-cat ./results.log
-set pends = \`cat ./results.log | grep PEND | wc -l\`
-set failures = \`cat ./results.log | grep FAIL | wc -l\`
-set success = \`cat ./results.log | grep 'PASS\|COPY' | wc -l\`
-set comments = \`cat ./results.log | grep "#" | wc -l\`
-set alltotal = \`cat ./results.log | wc -l\`
-@ total = \$alltotal - \$comments
-
-echo "#------- " >> results.log
-echo " " >> results.log
-echo "#totl = \$total" >> results.log
-echo "#pass = \$success" >> results.log
-echo "#fail = \$failures" >> results.log
-echo "#pend = \$pends" >> results.log
-
-echo ""
-echo "Descriptors:"
-echo " PASS - successful completion"
-echo " COPY - previously compiled code was copied for new test"
-echo " MISS - comparison data is missing"
-echo " PEND - run has been submitted to queue and is waiting or failed submission"
-echo " FAIL - test is still executing, did not complete, or completed and failed"
-echo ""
-echo "\$success of \$total tests PASSED"
-echo "\$failures of \$total tests FAILED"
-echo "\$pends of \$total tests PENDING"
-exit \$failures
-EOF
+  # Add code to post processing scripts
 
   if ($?ICE_MACHINE_QSTAT) then
-cat >! ${tsdir}/poll_queue.env << EOF0
+    cat >! ${tsdir}/poll_queue.env << EOF0
 setenv ICE_MACHINE_QSTAT ${ICE_MACHINE_QSTAT}
 EOF0
   endif
 
+  cat ${casescr}/cice.results.csh >> ${tsdir}/results.csh 
+
+  cat ${casescr}/cice.codecov.csh >> ${tsdir}/report_codecov.csh
+
+  cat ${casescr}/cice.lcov.csh >> ${tsdir}/report_lcov.csh
+
   # build and submit tests
   cd ${tsdir}
+  setenv SUITE_BUILD ${suitebuild}
+  setenv SUITE_REUSEBUILD ${suitereuse}
+  setenv SUITE_RUN ${suiterun}
+  setenv SUITE_SUBMIT ${suitesubmit}
   ./suite.submit | tee suite.log
   if ($report == 1) then
     echo "Reporting results"
@@ -1008,11 +1267,21 @@ EOF0
     ./results.csh
     ./report_results.csh
   endif
+  if ($coverage == 1) then
+    echo "Generating coverage reports"
+    ./poll_queue.csh
+    ./report_lcov.csh
+    #./report_codecov.csh
+  endif
   cd ${ICE_SANDBOX}
 
 endif
 
 #---------------------------------------------
+
+#set pd1 = `date -u "+%s%N"`
+#@ pdd = ( $pd1 - $pd0 ) / 1000000
+#echo "tcxp done $pdd"
 
 echo " "
 echo "${0} done"

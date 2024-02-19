@@ -1,4 +1,4 @@
-#! /bin/csh -f
+#!/bin/csh -f
 
 #source ./cice.settings
 #source ${ICE_CASEDIR}/env.${ICE_MACHCOMP} || exit 2
@@ -39,6 +39,13 @@ if ( ! -f ${ICE_RUNDIR}/cice ) then
   echo "Please run cice.build before this test."
   exit 99
 endif
+
+# Initial test results and Reset test results for rerun
+mv -f ${ICE_CASEDIR}/test_output ${ICE_CASEDIR}/test_output.prev
+echo "#---" >! ${ICE_CASEDIR}/test_output
+cat ${ICE_CASEDIR}/test_output.prev | grep -i "${ICE_TESTNAME} build" >> ${ICE_CASEDIR}/test_output
+echo "PEND ${ICE_TESTNAME} run" >> ${ICE_CASEDIR}/test_output
+rm -f ${ICE_CASEDIR}/test_output.prev
 
 EOF2
 

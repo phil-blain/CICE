@@ -44,6 +44,17 @@ else if (${grid} == 'gbox128') then
     set blckx = 8; set blcky = 8
   endif
 
+else if (${grid} == 'gbox180') then
+  set nxglob = 180
+  set nyglob = 180
+  if (${cicepes} <= 1) then
+    set blckx = 180; set blcky = 180
+  else if (${cicepes} <= 36) then
+    set blckx = 30; set blcky = 30
+  else
+    set blckx = 9; set blcky = 9
+  endif
+
 else if (${grid} == 'gbox80') then
   set nxglob = 80
   set nyglob = 80
@@ -53,6 +64,17 @@ else if (${grid} == 'gbox80') then
     set blckx = 20; set blcky = 20
   else
     set blckx = 8; set blcky = 8
+  endif
+
+else if (${grid} == 'gbox12') then
+  set nxglob = 12
+  set nyglob = 12
+  if (${cicepes} <= 1) then
+    set blckx = 12; set blcky = 12
+  else if (${cicepes} <= 8) then
+    set blckx = 4; set blcky = 4
+  else
+    set blckx = 2; set blcky = 2
   endif
 
 else if (${grid} == 'gx3') then
@@ -98,6 +120,12 @@ else if (${grid} == 'tx1') then
     set blckx = 10; set blcky = 10
   endif
 
+# this is for unit testing
+else if (${grid} == 'none') then
+  set nxglob = 1
+  set nyglob = 1
+  set blckx = 1; set blcky = 1
+
 else
   echo "${0:t}: ERROR unknown grid ${grid}"
   exit -9
@@ -128,8 +156,10 @@ if (${ICE_DECOMP_MXBLCKS} > 0) set mxblcks = ${ICE_DECOMP_MXBLCKS}
 
 set decomp = 'cartesian'
 set dshape = 'slenderX2'
-if (${nxglob} % ${cicepes} != 0) set decomp = 'roundrobin'
-if (${mxblcks} * ${blcky} * 2 < ${nyglob}) set decomp = 'roundrobin'
+if (${cicepes} % 2 != 0)                              set decomp = 'roundrobin'
+if (${nyglob} % (${blcky} * 2) != 0)                  set decomp = 'roundrobin'
+if (${nxglob} % ${blckx} != 0)                        set decomp = 'roundrobin'
+if (((${nxglob} * 2) % (${cicepes} * ${blckx})) != 0) set decomp = 'roundrobin'
 
 #--- outputs ---
 

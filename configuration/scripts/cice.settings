@@ -1,9 +1,9 @@
-#! /bin/csh -f
+#!/bin/csh -f
 
 setenv ICE_CASENAME   undefined
 setenv ICE_SANDBOX    undefined
 setenv ICE_MACHINE    undefined
-setenv ICE_COMPILER   undefined
+setenv ICE_ENVNAME    undefined
 setenv ICE_MACHCOMP   undefined
 setenv ICE_SCRIPTS    undefined
 setenv ICE_CASEDIR    undefined
@@ -13,12 +13,15 @@ setenv ICE_RSTDIR     ${ICE_RUNDIR}/restart
 setenv ICE_HSTDIR     ${ICE_RUNDIR}/history
 setenv ICE_LOGDIR     ${ICE_CASEDIR}/logs
 setenv ICE_DRVOPT     standalone/cice
-setenv ICE_IOTYPE     netcdf    # set to none if netcdf library is unavailable
+setenv ICE_TARGET     cice
+setenv ICE_IOTYPE     netcdf    # binary, netcdf, pio1, pio2
 setenv ICE_CLEANBUILD true
+setenv ICE_CPPDEFS    ""
 setenv ICE_QUIETMODE  false
 setenv ICE_GRID       undefined
 setenv ICE_NTASKS     undefined
 setenv ICE_NTHRDS     undefined
+setenv ICE_OMPSCHED   "static,1"
 setenv ICE_TEST       undefined
 setenv ICE_TESTNAME   undefined
 setenv ICE_TESTID     undefined
@@ -26,8 +29,10 @@ setenv ICE_BASELINE   undefined
 setenv ICE_BASEGEN    undefined
 setenv ICE_BASECOM    undefined
 setenv ICE_BFBCOMP    undefined
+setenv ICE_BFBTYPE    restart
 setenv ICE_SPVAL      undefined
 setenv ICE_RUNLENGTH  -1
+setenv ICE_MEMUSE     -1
 setenv ICE_ACCOUNT    undefined
 setenv ICE_QUEUE      undefined
 
@@ -39,5 +44,7 @@ setenv ICE_COMMDIR mpi
 if (${ICE_NTASKS} == 1) setenv ICE_COMMDIR serial
 
 ### Specialty code
+setenv ICE_SNICARHC  false  # compile with big hardcoded snicar table
 setenv ICE_BLDDEBUG  false  # build debug flags
+setenv ICE_COVERAGE  false  # build coverage flags
 

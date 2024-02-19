@@ -1,7 +1,7 @@
-#! /bin/csh -f
+#!/bin/csh -f
 
 #====================================
-# If the cice binary is passed as an argument and the file exists,
+# If the cice binary is passed via the --exe argument and the file exists,
 # copy it into the run directory and don't build the model.
 
 set dohelp = 0
@@ -96,12 +96,12 @@ endif
 source ./cice.settings
 source ${ICE_CASEDIR}/env.${ICE_MACHCOMP} || exit 2
 
-if (${ICE_MACHINE} != ${ICE_MACHINE_ENVNAME}) then
-  echo "WARNING, is ICE_MACHINE setting OK, ${ICE_MACHINE}, ${ICE_MACHINE_ENVNAME}"
+if (${ICE_MACHINE} != ${ICE_MACHINE_MACHNAME}) then
+  echo "WARNING, is ICE_MACHINE setting OK, ${ICE_MACHINE}, ${ICE_MACHINE_MACHNAME}"
 endif
 
-if (${ICE_COMPILER} != ${ICE_MACHINE_COMPILER}) then
-  echo "WARNING, is ICE_COMPILER setting OK, ${ICE_COMPILER}, ${ICE_MACHINE_COMPILER}"
+if (${ICE_ENVNAME} != ${ICE_MACHINE_ENVNAME}) then
+  echo "WARNING, is ICE_ENVNAME setting OK, ${ICE_ENVNAME}, ${ICE_MACHINE_ENVNAME}"
 endif
 
 echo " "
@@ -115,27 +115,28 @@ if !(-d ${ICE_RUNDIR}) mkdir -p ${ICE_RUNDIR}
 if !(-d ${ICE_OBJDIR}) mkdir -p ${ICE_OBJDIR}
 cd ${ICE_OBJDIR}
 
-setenv ICE_CPPDEFS " "
-
 if (${ICE_IOTYPE} == 'netcdf') then
   set IODIR = io_netcdf
-  setenv ICE_CPPDEFS "${ICE_CPPDEFS} -Dncdf"
-else if (${ICE_IOTYPE} == 'pio') then
-  set IODIR = io_pio
-  setenv ICE_CPPDEFS "${ICE_CPPDEFS} -Dncdf"
+  setenv ICE_CPPDEFS "${ICE_CPPDEFS} -DUSE_NETCDF"
+else if (${ICE_IOTYPE} =~ pio*) then
+  set IODIR = io_pio2
+  setenv ICE_CPPDEFS "${ICE_CPPDEFS} -DUSE_NETCDF"
 else
   set IODIR = io_binary
+endif
+if (${ICE_SNICARHC} == 'false') then
+  setenv ICE_CPPDEFS "${ICE_CPPDEFS} -DNO_SNICARHC"
 endif
 
 ### List of source code directories (in order of importance).
 cat >! Filepath << EOF
 ${ICE_SANDBOX}/cicecore/drivers/${ICE_DRVOPT}
-${ICE_SANDBOX}/cicecore/cicedynB/dynamics
-${ICE_SANDBOX}/cicecore/cicedynB/general
-${ICE_SANDBOX}/cicecore/cicedynB/analysis
-${ICE_SANDBOX}/cicecore/cicedynB/infrastructure
-${ICE_SANDBOX}/cicecore/cicedynB/infrastructure/io/$IODIR
-${ICE_SANDBOX}/cicecore/cicedynB/infrastructure/comm/${ICE_COMMDIR}
+${ICE_SANDBOX}/cicecore/cicedyn/dynamics
+${ICE_SANDBOX}/cicecore/cicedyn/general
+${ICE_SANDBOX}/cicecore/cicedyn/analysis
+${ICE_SANDBOX}/cicecore/cicedyn/infrastructure
+${ICE_SANDBOX}/cicecore/cicedyn/infrastructure/io/$IODIR
+${ICE_SANDBOX}/cicecore/cicedyn/infrastructure/comm/${ICE_COMMDIR}
 ${ICE_SANDBOX}/cicecore/shared
 ${ICE_SANDBOX}/icepack/columnphysics
 EOF
@@ -144,10 +145,15 @@ if !($?ICE_MACHINE_BLDTHRDS) then
   set ICE_MACHINE_BLDTHRDS = 1
 endif
 
+if (${directmake} == 0) then
+  set target = ${ICE_TARGET}
+endif
+
 if (${directmake} == 1) then
   echo "make ${target}"
   ${ICE_MACHINE_MAKE} -j ${ICE_MACHINE_BLDTHRDS} VPFILE=Filepath EXEC=${ICE_RUNDIR}/cice \
-    -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} ${target}
+    -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} \
+    DEPFILE=${ICE_CASEDIR}/makdep.c ${target}
   set bldstat = ${status}
   if (${bldstat} != 0) then
     echo "${0}: targeted make FAILED"
@@ -172,10 +178,12 @@ if (${ICE_CLEANBUILD} == 'true') then
   echo "gmake clean"
   if (${quiet} == "true") then
     ${ICE_MACHINE_MAKE} VPFILE=Filepath EXEC=${ICE_RUNDIR}/cice \
-        -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} clean >& ${ICE_BLDLOG_FILE}
+        -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} \
+        DEPFILE=${ICE_CASEDIR}/makdep.c clean >& ${ICE_BLDLOG_FILE}
   else
     ${ICE_MACHINE_MAKE} VPFILE=Filepath EXEC=${ICE_RUNDIR}/cice \
-        -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} clean |& tee ${ICE_BLDLOG_FILE}
+        -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} \
+        DEPFILE=${ICE_CASEDIR}/makdep.c clean |& tee ${ICE_BLDLOG_FILE}
   endif
 endif
 
@@ -183,11 +191,13 @@ echo "gmake cice"
 if (${quiet} == "true") then
   echo "  quiet mode on... patience"
   ${ICE_MACHINE_MAKE} -j ${ICE_MACHINE_BLDTHRDS} VPFILE=Filepath EXEC=${ICE_RUNDIR}/cice \
-      -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} >& ${ICE_BLDLOG_FILE} 
+      -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} \
+      DEPFILE=${ICE_CASEDIR}/makdep.c ${target} >& ${ICE_BLDLOG_FILE}
   set bldstat = ${status}
 else
   ${ICE_MACHINE_MAKE} -j ${ICE_MACHINE_BLDTHRDS} VPFILE=Filepath EXEC=${ICE_RUNDIR}/cice \
-      -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} |& tee ${ICE_BLDLOG_FILE} 
+      -f  ${ICE_CASEDIR}/Makefile MACFILE=${ICE_CASEDIR}/Macros.${ICE_MACHCOMP} \
+      DEPFILE=${ICE_CASEDIR}/makdep.c ${target} |& tee ${ICE_BLDLOG_FILE}
   set bldstat = ${status}
 endif
 

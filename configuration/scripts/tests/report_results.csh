@@ -1,5 +1,19 @@
 #!/bin/csh -f
 
+if ($#argv == 0) then
+  echo "${0}: Running results.csh"
+  ./results.csh >& /dev/null
+else if ($#argv == 1) then
+  if ("$argv[1]" =~ "-n") then
+    #continue
+  else
+    echo "$0 usage:"
+    echo "$0 [-n]"
+    echo "   -n : do NOT run results.csh (by default it does)"
+    exit -1
+  endif
+endif
+
 if (! -e results.log) then
   echo " "
   echo "${0}: ERROR results.log does not exist, try running results.csh"
@@ -11,7 +25,7 @@ set wikirepo = "https://github.com/CICE-Consortium/Test-Results.wiki.git"
 set wikiname = Test-Results.wiki
 
 rm -r -f ${wikiname}
-git clone ${wikirepo} ${wikiname}
+git clone --depth=1 ${wikirepo} ${wikiname}
 if ($status != 0) then
   echo " "
   echo "${0}: ERROR git clone failed"
@@ -25,6 +39,7 @@ set hash = `grep "#hash = " results.log | cut -c 9-`
 set shhash   = `grep "#hshs = " results.log | cut -c 9-`
 set hashuser = `grep "#hshu = " results.log | cut -c 9-`
 set hashdate = `grep "#hshd = " results.log | cut -c 9-`
+set testsuites = `grep "#suit = " results.log | cut -c 9-`
 set cdat = `grep "#date = " results.log | cut -c 9-`
 set ctim = `grep "#time = " results.log | cut -c 9-`
 set user = `grep "#user = " results.log | cut -c 9-`
@@ -34,7 +49,7 @@ set totl = `grep "#totl = " results.log | cut -c 9-`
 set pass = `grep "#pass = " results.log | cut -c 9-`
 set fail = `grep "#fail = " results.log | cut -c 9-`
 set cases = `grep -v "#" results.log | grep ${mach}_ | cut -d " " -f 2 | sort -u`
-set compilers = `grep -v "#" results.log | grep ${mach}_ | cut -d "_" -f 2 | sort -u`
+set envnames = `grep -v "#" results.log | grep ${mach}_ | cut -d "_" -f 2 | sort -u`
 
 #echo "debug ${repo}"
 #echo "debug ${bran}"
@@ -42,6 +57,7 @@ set compilers = `grep -v "#" results.log | grep ${mach}_ | cut -d "_" -f 2 | sor
 #echo "debug ${shhash}"
 #echo "debug ${hashuser}"
 #echo "debug ${hashdate}"
+#echo "debug ${testsuites}"
 #echo "debug ${cdat}"
 #echo "debug ${ctim}"
 #echo "debug ${user}"
@@ -66,25 +82,37 @@ if ("${shrepo}" !~ "*cice-consortium*") then
 endif
 
 set noglob
-set green  = "\![#00C000](https://placehold.it/15/00C000/000000?text=+)"
-set red    = "\![#F00000](https://placehold.it/15/F00000/000000?text=+)"
-set orange = "\![#FFA500](https://placehold.it/15/FFA500/000000?text=+)"
-set yellow = "\![#FFE600](https://placehold.it/15/FFE600/000000?text=+)"
-set gray   = "\![#AAAAAA](https://placehold.it/15/AAAAAA/000000?text=+)"
+set green  = "\![#00C000](images/00C000.png)"
+set red    = "\![#F00000](images/F00000.png)"
+set orange = "\![#FFA500](images/FFA500.png)"
+set yellow = "\![#FFE600](images/FFE600.png)"
+set gray   = "\![#AAAAAA](images/AAAAAA.png)"
 unset noglob
 
 #==============================================================
 # Create results table
 #==============================================================
 
-foreach compiler ( ${compilers} )
+foreach envname ( ${envnames} )
 
-  set ofile = "${shhash}.${mach}.${compiler}.${xcdat}.${xctim}"
-  set outfile = "${wikiname}/${tsubdir}/${ofile}.md"
+  set machinfo = `grep -m 1 "#machinfo = " results.log | cut -d = -f 2`
+  set envinfo = `grep -m 1 "#envinfo ${envname} = " results.log | cut -d = -f 2`
+
+  set cnt = 0
+  set found = 1
+  while ($found == 1)
+    set ofile = "${shhash}.${mach}.${envname}.${xcdat}.${xctim}.$cnt"
+    set outfile = "${wikiname}/${tsubdir}/${ofile}.md"
+    if (-e ${outfile}) then
+      @ cnt = $cnt + 1
+    else
+      set found = 0
+    endif
+  end
+
   mkdir -p ${wikiname}/${tsubdir}
   echo "${0}: writing to ${outfile}"
 
-  if (-e ${outfile}) rm -f ${outfile}
 
 cat >! ${outfile} << EOF
 
@@ -101,9 +129,9 @@ EOF
 @ rothr = 0
 
 foreach case ( ${cases} )
-if ( ${case} =~ *_${compiler}_* ) then
+if ( ${case} =~ *_${envname}_* ) then
 
-# check thata case results are meaningful
+# check that case results are meaningful
   set fbuild = `grep " ${case} " results.log | grep " build"   | cut -c 1-4`
   set frun   = `grep " ${case} " results.log | grep " run"     | cut -c 1-4`
   set ftest  = `grep " ${case} " results.log | grep " test"    | cut -c 1-4`
@@ -267,7 +295,9 @@ cat >! ${outfile} << EOF
 - hash = ${hash}
 - hash created by ${hashuser} ${hashdate}
 - vers = ${vers}
-- tested on ${mach}, ${compiler}, ${user}, ${cdat} ${ctim} UTC
+- tested by ${user}, ${cdat} ${ctim} UTC
+- ${mach} : ${machinfo}
+- ${envname} : ${envinfo}
 - ${ttotl} total tests: ${tpass} pass, ${tfail} fail
 - ${ttotl} total regressions: ${rpass} pass, ${rfail} fail, ${rothr} other
 EOF
@@ -295,22 +325,23 @@ end
 #=====================
 
 set chk = 0
-if (-e ${hashfile}) set chk = `grep "\*\*${hash}" ${hashfile} | wc -l`
+if (-e ${hashfile}) set chk = `grep "#### ${hash}" ${hashfile} | wc -l`
 if ($chk == 0) then
+# Note: the line '#### ${hash}' is not a comment since it's in the here doc
 cat >! ${hashfile} << EOF
-**${hash}** :
+#### ${hash}
 
-| machine | compiler | version | date | test fail | comp fail | total |
+| machine | envname | version | date | test fail | comp fail | total |
 | ------ | ------ | ------ | ------  | ------ | ------ | ------ |
-| ${mach} | ${compiler} | ${vers} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) |
+| ${mach} | ${envname} | ${vers} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) |
 
 EOF
 if (-e ${hashfile}.prev) cat ${hashfile}.prev >> ${hashfile}
 
 else
-  set oline = `grep -n "\*\*${hash}" ${hashfile} | head -1 | cut -d : -f 1`
+  set oline = `grep -n "#### ${hash}" ${hashfile} | head -1 | cut -d : -f 1`
   @ nline = ${oline} + 3
-  sed -i "$nline a | ${mach} | ${compiler} | ${vers} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) | " ${hashfile}
+  sed -i "$nline a | ${mach} | ${envname} | ${vers} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) | " ${hashfile}
 endif
 
 #=====================
@@ -318,25 +349,26 @@ endif
 #=====================
 
 set chk = 0
-if (-e ${machfile}) set chk = `grep "\*\*${mach}" ${machfile} | wc -l`
+if (-e ${machfile}) set chk = `grep "#### ${mach}" ${machfile} | wc -l`
 if ($chk == 0) then
+# Note: the line '#### ${mach}' is not a comment since it's in the here doc
 cat >! ${machfile} << EOF
-**${mach}** :
+#### ${mach}
 
-| version | hash | compiler | date | test fail | comp fail | total |
+| version | hash | envname | date | test fail | comp fail | total |
 | ------ | ------ | ------ | ------ | ------  | ------ | ------ |
-| ${vers} | ${shhash} | ${compiler} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) |
+| ${vers} | ${shhash} | ${envname} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) |
 
 EOF
 if (-e ${machfile}.prev) cat ${machfile}.prev >> ${machfile}
 
 else
-  set oline = `grep -n "\*\*${mach}" ${machfile} | head -1 | cut -d : -f 1`
+  set oline = `grep -n "#### ${mach}" ${machfile} | head -1 | cut -d : -f 1`
   @ nline = ${oline} + 3
-  sed -i "$nline a | ${vers} | ${shhash} | ${compiler} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) | " ${machfile}
+  sed -i "$nline a | ${vers} | ${shhash} | ${envname} | ${cdat} | ${tcolor} ${tfail}, ${tunkn} | ${rcolor} ${rfail}, ${rothr} | [${ttotl}](${ofile}) | " ${machfile}
 endif
 
-#foreach compiler
+#foreach envname
 end
 
 #=====================
