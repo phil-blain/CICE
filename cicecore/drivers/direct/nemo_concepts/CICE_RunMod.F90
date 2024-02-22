@@ -210,10 +210,11 @@
        ! 1st time step: initialize shortwave again (with correct forcing)
        !---------------------------------------------------------------
 
-         if (istep == 1 .and. runtype == 'initial' .and. .not. restart) &
+         if (istep == 1 .and. runtype == 'initial' .and. .not. restart) then 
             call init_shortwave
 
             if (debug_model) call debug_ice(debug_model_iblk, 'post re-init_shortwave')
+         endif
 
       !-----------------------------------------------------------------
       ! initialize diagnostics and save initial state values
@@ -237,9 +238,10 @@
       ! Scale radiation fields
       !-----------------------------------------------------------------
 
-            if (calc_Tsfc .and. ktherm >= 0) call prep_radiation (iblk)
-
-            if (debug_model) call debug_ice(iblk, 'post prep_radiation')
+            if (calc_Tsfc .and. ktherm >= 0) then
+               call prep_radiation (iblk)
+               if (debug_model) call debug_ice(iblk, 'post prep_radiation')
+            endif
 
       !-----------------------------------------------------------------
       ! thermodynamics and biogeochemistry
@@ -304,8 +306,10 @@
          !$OMP PARALLEL DO PRIVATE(iblk)
          do iblk = 1, nblocks
 
-            if (ktherm >= 0) call step_radiation (dt, iblk)
-            if (debug_model) call debug_ice(iblk, 'post step_radiation')
+            if (ktherm >= 0) then
+               call step_radiation (dt, iblk)
+               if (debug_model) call debug_ice(iblk, 'post step_radiation')
+            endif
 
       !-----------------------------------------------------------------
       ! get ready for coupling and the next time step
