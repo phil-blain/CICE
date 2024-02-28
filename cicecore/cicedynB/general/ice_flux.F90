@@ -311,10 +311,10 @@
          fhocn_ai, & ! net heat flux to ocean (W/m^2)
          fswthru_ai  ! shortwave penetrating to ocean (W/m^2)
 
-      ! Used with data assimilation in hadgem drivers
+      ! Used with data assimilation or restoring in some drivers
       real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
-         fresh_da, & ! fresh water flux to ocean due to data assim (kg/m^2/s)
-         fsalt_da    ! salt flux to ocean due to data assimilation(kg/m^2/s)
+         fresh_da, & ! fresh water flux to ocean due to data assim or restoring (kg/m^2/s)
+         fsalt_da    ! salt flux to ocean due to data assimilation or restoring (kg/m^2/s)
 
       real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public :: &
          fswthrun_ai  ! per-category fswthru * ai (W/m^2)
@@ -497,8 +497,8 @@
          fsalt_ai   (nx_block,ny_block,max_blocks), & ! salt flux to ocean (kg/m^2/s)
          fhocn_ai   (nx_block,ny_block,max_blocks), & ! net heat flux to ocean (W/m^2)
          fswthru_ai (nx_block,ny_block,max_blocks), &  ! shortwave penetrating to ocean (W/m^2)
-         fresh_da   (nx_block,ny_block,max_blocks), & ! fresh water flux to ocean due to data assim (kg/m^2/s)
-         fsalt_da   (nx_block,ny_block,max_blocks), & ! salt flux to ocean due to data assimilation(kg/m^2/s)
+         fresh_da   (nx_block,ny_block,max_blocks), & ! fresh water flux to ocean due to data assim or restoring (kg/m^2/s)
+         fsalt_da   (nx_block,ny_block,max_blocks), & ! salt flux to ocean due to data assimilation or restoring (kg/m^2/s)
          rside      (nx_block,ny_block,max_blocks), & ! fraction of ice that melts laterally
          fside      (nx_block,ny_block,max_blocks), & ! lateral melt rate (W/m^2)
          fsw        (nx_block,ny_block,max_blocks), & ! incoming shortwave radiation (W/m^2)
@@ -715,7 +715,7 @@
       fswthru_idr (:,:,:) = c0
       fswthru_idf (:,:,:) = c0
       dragiou (:,:,:) = c0
-      fresh_da(:,:,:) = c0    ! data assimilation
+      fresh_da(:,:,:) = c0    ! data assimilation or restoring
       fsalt_da(:,:,:) = c0
       flux_bio (:,:,:,:) = c0 ! bgc
       fnit    (:,:,:) = c0

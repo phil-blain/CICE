@@ -389,6 +389,7 @@
           albpnd, albcnt, apeff_ai, coszen, fpond, fresh, l_mpond_fresh, &
           alvdf_ai, alidf_ai, alvdr_ai, alidr_ai, fhocn_ai, &
           fresh_ai, fsalt_ai, fsalt, &
+          fresh_da, fsalt_da, &
           fswthru_ai, fhocn, fswthru, scale_factor, snowfrac, &
           fswthru_vdr, fswthru_vdf, fswthru_idr, fswthru_idf, &
           swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
@@ -537,8 +538,8 @@
             alidf_ai  (i,j,iblk) = alidf  (i,j,iblk)
             alvdr_ai  (i,j,iblk) = alvdr  (i,j,iblk)
             alidr_ai  (i,j,iblk) = alidr  (i,j,iblk)
-            fresh_ai  (i,j,iblk) = fresh  (i,j,iblk)
-            fsalt_ai  (i,j,iblk) = fsalt  (i,j,iblk)
+            fresh_ai  (i,j,iblk) = fresh  (i,j,iblk) + fresh_da(i,j,iblk)
+            fsalt_ai  (i,j,iblk) = fsalt  (i,j,iblk) + fsalt_da(i,j,iblk)
             fhocn_ai  (i,j,iblk) = fhocn  (i,j,iblk)
             fswthru_ai(i,j,iblk) = fswthru(i,j,iblk)
             fzsal_ai  (i,j,iblk) = fzsal  (i,j,iblk) 

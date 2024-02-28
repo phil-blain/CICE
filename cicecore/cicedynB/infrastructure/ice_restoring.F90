@@ -8,10 +8,11 @@
 
       use ice_kinds_mod
       use ice_blocks, only: nx_block, ny_block
-      use ice_constants, only: c0, c1, c2, p2
+      use ice_constants, only: c0, c1, c2, p2, p001
       use ice_domain_size, only: ncat, max_blocks
       use ice_forcing, only: trestore, trest
       use ice_state, only: aicen, vicen, vsnon, trcrn
+      use ice_flux, only: fresh_da, fsalt_da ! for computing the fresh water and salinity fluxes
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_bound
       use ice_exit, only: abort_ice
       use ice_fileunits, only: nu_diag
@@ -769,6 +770,7 @@
      this_block  ! block info for current block
 
    real (dbl_kind) :: &
+     rhoi, rhos, ice_ref_salinity, &
      secday,             &!
      ctime                ! dt/trest
 
@@ -776,6 +778,7 @@
 
    call ice_timer_start(timer_bound)
    call icepack_query_parameters(secday_out=secday)
+   call icepack_query_parameters(rhoi_out=rhoi, rhos_out=rhos, ice_ref_salinity_out=ice_ref_salinity)
    call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
    call icepack_warnings_flush(nu_diag)
    if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
@@ -810,9 +813,21 @@
       jlo = this_block%jlo
       jhi = this_block%jhi
 
+      fresh_da(:,:,iblk) = c0
+      fsalt_da(:,:,iblk) = c0
+
       do n = 1, ncat
          do j = 1, ny_block
             do i = 1, nx_block
+               ! convert the changes in volume to fresh water flux
+               ! negative for ice growth, positive for melting
+               ! since for melting, freshwater flux to ocean is positive
+               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhoi / trest
+               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                 - (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhos / trest
+               fsalt_da(i,j,iblk) = fsalt_da(i,j,iblk) &
+                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * ice_ref_salinity * p001 / trest
                aicen(i,j,n,iblk) = aicen(i,j,n,iblk) &
                   + (aicen_rest(i,j,n,iblk)-aicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
                vicen(i,j,n,iblk) = vicen(i,j,n,iblk) &
