@@ -603,8 +603,8 @@
    end where
    if (my_task == master_task) then
       write(nu_diag,*) 'ice_domain work_unit, max_work_unit = ',work_unit, max_work_unit
-      write(nu_diag,*) 'ice_domain nocn = ',minval(nocn),maxval(nocn),sum(nocn)
-      write(nu_diag,*) 'ice_domain work_per_block = ',minval(work_per_block),maxval(work_per_block),sum(work_per_block)
+      write(nu_diag,*) 'ice_domain min(nocn), max(nocn), sum(nocn) = ',minval(nocn),maxval(nocn),sum(nocn)
+      write(nu_diag,*) 'ice_domain min(work_per_block), max(work_per_block), sum(work_per_block) = ',minval(work_per_block),maxval(work_per_block),sum(work_per_block)
    endif
    deallocate(nocn)
 
