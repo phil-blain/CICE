@@ -675,15 +675,18 @@
       if (ninfo /= distrb_info%numLocalBlocks) &
          call abort_ice(subname//' ice_distributionGet numLocalBlocks ERROR', file=__FILE__, line=__LINE__)
 
-      allocate(blkinfo(ninfo))
+      if (ninfo > 0) then
+         allocate(blkinfo(ninfo))
 
-      call ice_distributionGet(distrb_info, blockGlobalID = blkinfo)
-      do n = 1, ninfo
-         if (blkinfo(n) /= distrb_info%blockGlobalID(n)) &
-            call abort_ice(subname//' ice_distributionGet blockGlobalID ERROR', file=__FILE__, line=__LINE__)
-      enddo
+         call ice_distributionGet(distrb_info, blockGlobalID = blkinfo)
+         do n = 1, ninfo
+            if (blkinfo(n) /= distrb_info%blockGlobalID(n)) &
+               call abort_ice(subname//' ice_distributionGet blockGlobalID ERROR', file=__FILE__, line=__LINE__)
+         enddo
 
-      deallocate(blkinfo)
+         deallocate(blkinfo)
+      endif
+
       allocate(blkinfo(nblocks_tot))
 
       call ice_distributionGet(distrb_info, blockLocation = blkinfo)
