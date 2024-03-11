@@ -1358,6 +1358,15 @@
          endif
       endif
 
+      if (grid_format /= 'bin'       .and. &
+          grid_format /= 'nc'        .and. &
+          grid_format /= 'meshnc')    then
+         if (my_task == master_task) then
+            write(nu_diag,*) subname//' ERROR: grid_format unknown = ',trim(grid_format)
+         endif
+         abort_list = trim(abort_list)//":57"
+      endif
+
       if (ktransport <= 0) then
          advection = 'none'
       endif
