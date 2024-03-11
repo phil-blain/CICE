@@ -703,6 +703,7 @@
 
       deallocate(blkinfo)
 
+      call ice_barrier()
       if (my_task == master_task) then
          write(nu_diag,*) ' '
          write(nu_diag,'(2a)') subname,' ice_distributionGet checks pass'
