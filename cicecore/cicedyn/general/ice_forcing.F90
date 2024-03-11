@@ -283,6 +283,7 @@
       endif
 
       if (use_leap_years .and. (index(trim(atm_data_type),'JRA55') == 0 .and. &
+                                trim(atm_data_type) /= 'default'     .and. &
                                 trim(atm_data_type) /= 'hycom'       .and. &
                                 trim(atm_data_type) /= 'box2001'))   then
          write(nu_diag,*) 'use_leap_years option is currently only supported for'
