@@ -2891,7 +2891,9 @@
 
       real (kind=dbl_kind) :: &
          zfbar, zhbar, zhsno, zhinf, &
-         za, zb, zhm1, zhp1, zjk, zfk, zhk, zhup, zfseuil=0.85
+         za, zb, zhm1, zhp1, zjk, zfk, zhk, zhup, zfseuil=0.85, puny
+
+      call icepack_query_parameters(puny_out=puny)
 
       aicen(:,:,:) = c0
       vicen(:,:,:) = c0
@@ -2938,6 +2940,10 @@
                         end if
                         zfk = za*(zhup - zhm1)-zb*(zhup*zhup-zhm1*zhm1)/2._dbl_kind
                         zhk = za*(zhup*zhup - zhm1*zhm1)/2._dbl_kind-zb*(zhup*zhup*zhup - zhm1*zhm1*zhm1)/3._dbl_kind
+                        if (zfk < puny .or. zhk < puny) then
+                           zfk = 0.0_dbl_kind
+                           zhk = 0.0_dbl_kind
+                        endif
                      end if
                      aicen(i,j,n)=zfk
                      vicen(i,j,n)=zhk
@@ -2964,6 +2970,10 @@
                         end if
                         zfk = za*( zhinf*(zhup*zhup - zhm1*zhm1) / 2._dbl_kind - ( zhup*zhup*zhup - zhm1*zhm1*zhm1 ) / 3._dbl_kind )
                         zhk = za*( zhinf*(zhup*zhup*zhup - zhm1*zhm1*zhm1) / 3._dbl_kind - ( zhup*zhup*zhup*zhup - zhm1*zhm1*zhm1*zhm1 ) / 4._dbl_kind )
+                        if (zfk < puny .or. zhk < puny) then
+                           zfk = 0.0_dbl_kind
+                           zhk = 0.0_dbl_kind
+                        endif
                      end if
                      aicen(i,j,n)=zfk
                      vicen(i,j,n)=zhk
