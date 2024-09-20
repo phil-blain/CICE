@@ -1951,7 +1951,7 @@
       use ice_blocks, only: block, get_block, nx_block, ny_block
       use ice_domain, only: nblocks, blocks_ice
       use ice_domain_size, only: ncat, nilyr, nslyr, n_iso, n_aero, nfsd
-      use ice_flux, only: sst, Tf, Tair, salinz, Tmltz
+      use ice_flux, only: sst, sss, Tf, Tair, salinz, Tmltz
       use ice_grid, only: tmask, ULON, TLAT
       use ice_state, only: trcr_depend, aicen, trcrn, vicen, vsnon, &
           aice0, aice, vice, vsno, trcr, aice_init, bound_state, &
@@ -2137,7 +2137,7 @@
       if (trim(ice_data_type(1:6)) == 'initnc') then
          ! note that the volume arrays for ice and snow
          ! are actually read as thickness, we are just using the arrays as placeholders
-         call readnc(aice, vice, vsno, Tair, sst)
+         call readnc(aice, vice, vsno, Tair, sst, sss)
       endif
       !-----------------------------------------------------------------
       ! Set state variables
@@ -2727,7 +2727,7 @@
 !
 ! author: FD 2012-11 (from initnc)
 
-      subroutine readnc(aice, hice, hsno, Tair, sst)
+      subroutine readnc(aice, hice, hsno, Tair, sst, sss)
 
       use ice_fileunits, only: nu_diag
       use ice_read_write
@@ -2739,6 +2739,7 @@
       real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), intent(inout) :: &
          Tair    , & ! air temperature  (K)
          sst     , & ! sea surface temperature (C)
+         sss     , & ! sea surface salinity (ppt)
          aice    , & ! ice total concentration
          hice    , & ! ice thickness (m)
          hsno        ! snow thickness (m)
@@ -2791,13 +2792,18 @@
                     field_loc=field_loc_center, &
                     field_type=field_type_scalar)
 
-! for later
-!      fieldname='sst'
-!
-!      call ice_read_nc(fid_init,1,fieldname,sst ,diag, &
-!                    field_loc=field_loc_center, &
-!                    field_type=field_type_scalar)
-!
+     fieldname='sst'
+
+     call ice_read_nc(fid_init,1,fieldname,sst ,diag, &
+                   field_loc=field_loc_center, &
+                   field_type=field_type_scalar)
+
+     fieldname='sss'
+
+     call ice_read_nc(fid_init,1,fieldname,sss ,diag, &
+                   field_loc=field_loc_center, &
+                   field_type=field_type_scalar)
+
       if (my_task == master_task) then
          call ice_close_nc(fid_init)
          write(nu_diag,*) 'closing file ',TRIM(init_file)
