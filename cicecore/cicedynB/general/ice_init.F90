@@ -1951,7 +1951,7 @@
       use ice_blocks, only: block, get_block, nx_block, ny_block
       use ice_domain, only: nblocks, blocks_ice
       use ice_domain_size, only: ncat, nilyr, nslyr, n_iso, n_aero, nfsd
-      use ice_flux, only: sst, sss, Tf, Tair, salinz, Tmltz
+      use ice_flux, only: sst, sss, Tf, Tair, salinz, Tmltz, init_Tf
       use ice_grid, only: tmask, ULON, TLAT
       use ice_state, only: trcr_depend, aicen, trcrn, vicen, vsnon, &
           aice0, aice, vice, vsno, trcr, aice_init, bound_state, &
@@ -2138,6 +2138,7 @@
          ! note that the volume arrays for ice and snow
          ! are actually read as thickness, we are just using the arrays as placeholders
          call readnc(aice, vice, vsno, Tair, sst, sss)
+         call init_Tf(sss, Tf)
       endif
       !-----------------------------------------------------------------
       ! Set state variables
