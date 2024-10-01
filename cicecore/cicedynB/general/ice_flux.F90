@@ -26,7 +26,8 @@
       implicit none
       private
       public :: init_coupler_flux, init_history_therm, init_history_dyn, &
-                init_flux_ocn, init_flux_atm, scale_fluxes, alloc_flux
+                init_flux_ocn, init_flux_atm, scale_fluxes, alloc_flux, &
+                init_Tf
 
       character (char_len), public :: &
          default_season ! seasonal default values for forcing
@@ -659,13 +660,7 @@
       frzmlt_init(:,:,:) = c0         ! freezing/melting potential (W/m^2)
       sss   (:,:,:) = 34.0_dbl_kind   ! sea surface salinity (ppt)
 
-      do iblk = 1, size(Tf,3)
-      do j = 1, size(Tf,2)
-      do i = 1, size(Tf,1)
-         Tf (i,j,iblk) = icepack_liquidus_temperature(sss(i,j,iblk)) ! freezing temp (C)
-      enddo
-      enddo
-      enddo
+      call init_Tf(sss, Tf)
 
       sst   (:,:,:) = Tf(:,:,:)       ! sea surface temp (C)
       qdp   (:,:,:) = c0              ! deep ocean heat flux (W/m^2)
@@ -753,6 +748,34 @@
 
 
       end subroutine init_coupler_flux
+
+!=======================================================================
+
+! Initialize Tf from sss using icepack_liquidus_temperature
+
+      subroutine init_Tf(sss, Tf)
+
+      real (kind=dbl_kind), intent(in),    dimension (:,:,:) :: & ! (nx_block,ny_block,max_blocks)
+         sss     ! sea surface salinity (ppt)
+
+      real (kind=dbl_kind), intent(inout), dimension (:,:,:) :: & ! (nx_block,ny_block,max_blocks)
+         Tf      ! freezing temperature (C)
+
+      integer :: i, j, iblk
+
+      character(len=*), parameter :: subname = '(init_Tf)'
+
+      !$OMP PARALLEL DO PRIVATE(iblk,i,j)
+      do iblk = 1, size(Tf,3)
+      do j = 1, size(Tf,2)
+      do i = 1, size(Tf,1)
+         Tf (i,j,iblk) = icepack_liquidus_temperature(sss(i,j,iblk)) ! freezing temp (C)
+      enddo
+      enddo
+      enddo
+      !$OMP END PARALLEL DO
+
+      end subroutine init_Tf
 
 !=======================================================================
 
