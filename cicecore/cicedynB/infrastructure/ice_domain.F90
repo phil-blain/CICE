@@ -505,22 +505,20 @@
 #else
          do j=this_block%jlo,this_block%jhi
 #endif
-            if (this_block%j_glob(j) > 0) then
 #ifdef CICE_IN_NEMO
-               do i=1,nx_block
+            do i=1,nx_block
 #else
-               do i=this_block%ilo,this_block%ihi
+            do i=this_block%ilo,this_block%ihi
 #endif
-                  if (this_block%i_glob(i) > 0) then
-                     ig = this_block%i_glob(i)
-                     jg = this_block%j_glob(j)
-                     if (KMTG(ig,jg) > puny .and.                      &
-                        (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
-                         ULATG(ig,jg) > nhlat/rad_to_deg) )            & 
-                          nocn(n) = nocn(n) + flat(ig,jg)
-                  endif
-               end do
-            endif
+               ig = this_block%i_glob(i)
+               jg = this_block%j_glob(j)
+               if (jg > 0 .and. ig > 0) then
+                  if (KMTG(ig,jg) > puny .and.                      &
+                     (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
+                      ULATG(ig,jg) > nhlat/rad_to_deg) )            & 
+                       nocn(n) = nocn(n) + flat(ig,jg)
+               endif
+            end do
          end do
 
          !*** with array syntax, we actually do work on non-ocean
