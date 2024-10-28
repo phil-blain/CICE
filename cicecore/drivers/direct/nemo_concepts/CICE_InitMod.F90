@@ -25,7 +25,7 @@
 
       implicit none
       private
-      public :: cice_init
+      public :: cice_init_begin, cice_init_finish
 
 !=======================================================================
 
@@ -34,9 +34,9 @@
 !=======================================================================
 
 !  Initialize the basic state, grid and all necessary parameters for
-!  running the CICE model.
+!  running the CICE model. First part: before init_state
 
-      subroutine cice_init(mpi_comm)
+      subroutine cice_init_begin(mpi_comm)
 
       use ice_state, only: alloc_state
       use ice_flux_bgc, only: alloc_flux_bgc
@@ -45,7 +45,7 @@
       use ice_arrays_column, only: floe_rad_l, floe_rad_c, &
           floe_binwidth, c_fsd_range
       use ice_calendar, only: dt, dt_dyn, write_ic, &
-          init_calendar, advance_timestep, calc_timesteps
+          init_calendar
       use ice_communicate, only: init_communicate, my_task, master_task
       use ice_diagnostics, only: init_diags
       use ice_domain, only: init_domain_blocks
@@ -53,28 +53,20 @@
       use ice_dyn_eap, only: init_eap, alloc_dyn_eap
       use ice_dyn_shared, only: kdyn, init_dyn, alloc_dyn_shared
       use ice_dyn_vp, only: init_vp
-      use ice_flux, only: init_coupler_flux, init_history_therm, &
-          init_history_dyn, init_flux_atm, init_flux_ocn, alloc_flux
-      use ice_forcing, only: init_forcing_ocn, init_forcing_atmo, &
-          get_forcing_atmo, get_forcing_ocn, alloc_forcing, get_wave_spec
-      use ice_forcing_bgc, only: get_forcing_bgc, get_atm_bgc, &
-          faero_data, faero_default, faero_optics, alloc_forcing_bgc
+      use ice_flux, only: init_coupler_flux, alloc_flux
       use ice_grid, only: init_grid1, init_grid2, alloc_grid
-      use ice_history, only: init_hist, accum_hist
-      use ice_restart_shared, only: restart, runid, runtype
-      use ice_init, only: input_data, init_state
-      use ice_init_column, only: init_thermo_vertical, init_shortwave, init_zbgc, input_zbgc, count_tracers
+      use ice_history, only: init_hist
+      use ice_init, only: input_data
+      use ice_init_column, only: init_thermo_vertical, init_zbgc, input_zbgc, count_tracers
       use ice_kinds_mod
-      use ice_restoring, only: ice_HaloRestore_init, restore_ice_mask, ice_read_restoring_mask
       use ice_timers, only: timer_total, init_ice_timers, ice_timer_start
-      use ice_transport_driver, only: init_transport
       use ice_nemo_concepts, only: alloc_nemo_concepts
 
       integer(kind=int_kind), intent(in) :: mpi_comm ! NEMO MPI communicator
 
       logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
          tr_fsd, wave_spec
-      character(len=*),parameter :: subname = '(cice_init)'
+      character(len=*),parameter :: subname = '(cice_init_begin)'
 
       call init_communicate(mpi_comm) ! initial setup for message passing
       call init_fileunits       ! unit numbers
@@ -136,6 +128,35 @@
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
          file=__FILE__, line=__LINE__)
+
+      end subroutine cice_init_begin
+
+!=======================================================================
+
+!  Initialize the basic state, grid and all necessary parameters for
+!  running the CICE model. Second part: init_state and rest of initialization
+
+      subroutine cice_init_finish
+
+      use ice_calendar, only: dt, write_ic, &
+            advance_timestep, calc_timesteps
+      use ice_diagnostics, only: init_diags
+      use ice_flux, only: init_history_therm, init_history_dyn, init_flux_atm, init_flux_ocn
+      use ice_forcing, only: init_forcing_ocn, init_forcing_atmo, &
+            get_forcing_atmo, get_forcing_ocn, get_wave_spec
+      use ice_forcing_bgc, only: get_forcing_bgc, get_atm_bgc, &
+            faero_data, faero_default, faero_optics, alloc_forcing_bgc
+      use ice_history, only: accum_hist
+      use ice_restart_shared, only: restart, runtype
+      use ice_init, only: init_state
+      use ice_init_column, only: init_shortwave
+      use ice_kinds_mod
+      use ice_restoring, only: ice_HaloRestore_init, restore_ice_mask, ice_read_restoring_mask
+      use ice_transport_driver, only: init_transport
+
+      logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
+         tr_fsd, wave_spec
+      character(len=*),parameter :: subname = '(cice_init_finish)'
 
 #ifndef CICE_IN_NEMO
       call init_forcing_ocn(dt) ! initialize sss and sst from data
@@ -202,7 +223,7 @@
       call init_flux_atm        ! initialize atmosphere fluxes sent to coupler
       call init_flux_ocn        ! initialize ocean fluxes sent to coupler
 
-      end subroutine cice_init
+      end subroutine cice_init_finish
 
 !=======================================================================
 
