@@ -505,22 +505,19 @@
 #else
          do j=this_block%jlo,this_block%jhi
 #endif
-            if (this_block%j_glob(j) > 0) then
 #ifdef CICE_IN_NEMO
-               do i=1,nx_block
+            do i=1,nx_block
 #else
-               do i=this_block%ilo,this_block%ihi
+            do i=this_block%ilo,this_block%ihi
 #endif
-                  if (this_block%i_glob(i) > 0) then
-                     ig = this_block%i_glob(i)
-                     jg = this_block%j_glob(j)
-                     if (KMTG(ig,jg) > puny .and.                      &
-                        (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
-                         ULATG(ig,jg) > nhlat/rad_to_deg) )            & 
-                          nocn(n) = nocn(n) + flat(ig,jg)
-                  endif
-               end do
-            endif
+               call get_global_indices(this_block, i, j, ig, jg)
+               if (jg > 0 .and. ig > 0) then
+                  if (KMTG(ig,jg) > puny .and.                      &
+                     (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
+                      ULATG(ig,jg) > nhlat/rad_to_deg) )            & 
+                       nocn(n) = nocn(n) + flat(ig,jg)
+               endif
+            end do
          end do
 
          !*** with array syntax, we actually do work on non-ocean
@@ -669,6 +666,55 @@
 !----------------------------------------------------------------------
 
  end subroutine init_domain_distribution
+
+!***********************************************************************
+
+ subroutine get_global_indices(this_block, i, j, ig, jg)
+
+!  This routine returns the global indices given local indices on this_block,
+!  including for the northern halo row of the tripole grids
+!  Should not be called for points outside the halo (e.g. for padding cells)
+
+   use ice_domain_size, only: nx_global, ny_global
+   use ice_blocks, only: nghost
+
+! arguments
+
+   type (block), intent(in) :: &
+      this_block           ! block information for current block
+   integer(int_kind), intent(in) :: &
+      i, j                 ! local indices on this block
+   integer(int_kind), intent(out) :: &
+     ig, jg                ! global indices on the true grid
+
+! local variables
+
+   integer(int_kind) :: i_offset, j_offset ! grid offset depending on the tripole option
+
+   ig = this_block%i_glob(i)
+   jg = this_block%j_glob(j)
+
+   if (ig > 0 .and. jg > 0) then ! valid point
+      return
+   endif
+
+   if ( jg < 0 ) jg = - jg ! jg negative in northern halo, see "northern ghost cells" in ice_blocks::create_blocks
+
+   ! offset is different on a T-fold versus U-fold
+   i_offset = 1
+   j_offset = 1
+   if (this_block % tripoleTFlag ) then
+      i_offset = 2
+      j_offset = 0
+   endif
+
+   if (jg > ny_global .and. jg <= ny_global + nghost) then
+      jg = 2 * ny_global - jg + j_offset
+      ig = nx_global - ig + i_offset
+   endif
+
+ end subroutine get_global_indices
+
 
 !***********************************************************************
 
