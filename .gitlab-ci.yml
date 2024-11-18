@@ -1,0 +1,52 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: none      # Do not automatically clone submodules before each job (done in before_script)
+  GIT_STRATEGY: clone               # Clone repo for every pipeline (seems to avoid weird errors due to submodule worktrees becoming out of sync)
+  GIT_DEPTH: "3"                    # Shallow clone to speed up build
+
+stages:
+    - build
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+
+.variables_ppp: &vars-ppp
+    ORD_SOUMET_MACH: "ppp5"         # Machine name
+    ORD_SOUMET_C:    "40"           # Number of CPUs to use
+    ORD_SOUMET_T:    "600"          # Wallclock time (seconds)
+    ORD_SOUMET_CM:   "8G"           # Memory
+    ORD_SOUMET_Q:    "development"  # Queue
+    ARCH_NAME: intel
+
+.variables_super: &vars-super
+    ORD_SOUMET_MACH: "underhill"
+    ORD_SOUMET_C:    "80"           # Use more than 75% of one node's CPUs (80) to avoid ord_soumet's waste prevention
+    ORD_SOUMET_T:    "3600"
+    ORD_SOUMET_CM:   "8G"
+    ORD_SOUMET_Q:    "development"
+    ARCH_NAME: intel
+
+before_script:
+  - git submodule update --init --recursive ||
+    git -c url.https://gitlab.science.gc.ca/$CI_PROJECT_NAMESPACE/.insteadOf=https://gitlab.science.gc.ca/concepts/ submodule update --init --recursive --force ||
+    git submodule update --init --recursive --force
+
+build:
+  stage: build
+  rules:
+    - if: '$MACHINE == "ppp"'
+      variables:
+        <<: *vars-ppp
+    - if: '$MACHINE == "sc"'
+      variables:
+        <<: *vars-super
+  parallel:
+    matrix:
+      - MACHINE: ["ppp"] #, "sc"]
+  script:
+    - ./cice.setup -m $ORD_SOUMET_MACH -e $ARCH_NAME -c ci
+    - ./ci/casescripts/parse_settings.sh  ci/*.settings <(echo "setenv ICE_RUNDIR $PWD/build")
+    - cd ci && ./cice.build
