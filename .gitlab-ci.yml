@@ -29,10 +29,44 @@ workflow:
     ORD_SOUMET_Q:    "development"
     ARCH_NAME: intel
 
+.variables_cice: &vars-cice
+    ICE_DRVOPT: "standalone/cice"
+
+.vars_libcice: &vars-libcice
+    ICE_DRVOPT: "direct/nemo_concepts"
+    ICE_CPPDEFS: "-DCICE_IN_NEMO"
+    ICE_EXT:     ".a"
+
 before_script:
   - git submodule update --init --recursive ||
     git -c url.https://gitlab.science.gc.ca/$CI_PROJECT_NAMESPACE/.insteadOf=https://gitlab.science.gc.ca/concepts/ submodule update --init --recursive --force ||
     git submodule update --init --recursive --force
+
+.parallel:
+  parallel:
+    matrix:
+      - MACHINE: ["ppp"] #, "sc"]
+        TARGET:  ["cice", "libcice"]
+
+setup:
+  stage: .pre
+  rules:
+    - if: '$TARGET == "cice"'
+      variables:
+        <<: *vars-cice
+    - if: '$TARGET == "libcice"'
+      variables:
+        <<: *vars-libcice
+  extends: .parallel
+  variables:
+    GIT_STRATEGY: none
+  before_script: []
+  script:
+    - env | grep ^ICE_ >> $TARGET.env
+  artifacts:
+    paths:
+      - $TARGET.env
+    expire_in: 1 hour
 
 build:
   stage: build
@@ -43,11 +77,12 @@ build:
     - if: '$MACHINE == "sc"'
       variables:
         <<: *vars-super
-  parallel:
-    matrix:
-      - MACHINE: ["ppp"] #, "sc"]
-        TARGET:  ["cice", "libcice"]
+  extends: .parallel
   script:
+    - source $TARGET.env
     - ./cice.setup -m $ORD_SOUMET_MACH -e $ARCH_NAME -c ci
-    - ./ci/casescripts/parse_settings.sh  ci/*.settings <(echo "setenv ICE_RUNDIR $PWD/build")
-    - cd ci && ./cice.build $TARGET EXEC=$TARGET
+    - echo "setenv ICE_RUNDIR  $PWD/build"   >>ci.settings
+    - echo "setenv ICE_DRVOPT  $ICE_DRVOPT"  >>ci.settings
+    - echo "setenv ICE_CPPDEFS $ICE_CPPDEFS" >>ci.settings
+    - ./ci/casescripts/parse_settings.sh  ci/*.settings ci.settings
+    - cd ci && ./cice.build $TARGET EXEC="${TARGET}${ICE_EXT}"
