@@ -46,7 +46,8 @@ build:
   parallel:
     matrix:
       - MACHINE: ["ppp"] #, "sc"]
+        TARGET:  ["cice", "libcice"]
   script:
     - ./cice.setup -m $ORD_SOUMET_MACH -e $ARCH_NAME -c ci
     - ./ci/casescripts/parse_settings.sh  ci/*.settings <(echo "setenv ICE_RUNDIR $PWD/build")
-    - cd ci && ./cice.build
+    - cd ci && ./cice.build $TARGET EXEC=$TARGET
