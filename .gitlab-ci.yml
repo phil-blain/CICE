@@ -42,11 +42,16 @@ before_script:
     git -c url.https://gitlab.science.gc.ca/$CI_PROJECT_NAMESPACE/.insteadOf=https://gitlab.science.gc.ca/concepts/ submodule update --init --recursive --force ||
     git submodule update --init --recursive --force
 
+.matrix_machine: &matrix-machine
+  MACHINE: ["ppp"] #, "sc"]
+.matrix_target: &matrix-target
+  TARGET:  ["cice", "libcice"]
+
 .parallel:
   parallel:
     matrix:
-      - MACHINE: ["ppp"] #, "sc"]
-        TARGET:  ["cice", "libcice"]
+      - <<: *matrix-machine
+        <<: *matrix-target
 
 setup:
   stage: .pre
@@ -57,7 +62,9 @@ setup:
     - if: '$TARGET == "libcice"'
       variables:
         <<: *vars-libcice
-  extends: .parallel
+  parallel:
+    matrix:
+      - <<: *matrix-target
   variables:
     GIT_STRATEGY: none
   before_script: []
