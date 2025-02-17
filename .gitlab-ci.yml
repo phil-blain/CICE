@@ -13,6 +13,11 @@ workflow:
       when: never
     - if: '$CI_COMMIT_BRANCH'
 
+.default_rules:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: never
+
 .variables_ppp: &vars-ppp
     ORD_SOUMET_MACH: "ppp5"         # Machine name
     ORD_SOUMET_C:    "40"           # Number of CPUs to use
@@ -56,6 +61,7 @@ before_script:
 setup:
   stage: .pre
   rules:
+    - !reference [.default_rules, rules]
     - if: '$TARGET == "cice"'
       variables:
         <<: *vars-cice
@@ -78,6 +84,7 @@ setup:
 build:
   stage: build
   rules:
+    - !reference [.default_rules, rules]
     - if: '$MACHINE == "ppp"'
       variables:
         <<: *vars-ppp
@@ -93,3 +100,18 @@ build:
     - echo "setenv ICE_CPPDEFS $ICE_CPPDEFS" >>ci.settings
     - ./ci/casescripts/parse_settings.sh  ci/*.settings ci.settings
     - cd ci && ./cice.build $TARGET EXEC="${TARGET}${ICE_EXT}"
+
+mirror-consortium:
+  stage: build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  variables:
+    <<: *vars-ppp
+  before_script: []
+  script:
+    - git branch --delete --remote $(git for-each-ref refs/remotes/origin --format='%(refname:short)')
+    - git remote add --mirror=fetch consortium https://github.com/CICE-Consortium/CICE.git
+    - https_proxy=http://webproxy.science.gc.ca:8888/ git fetch consortium
+    - git config remote.origin.fetch "+refs/*:refs/*"
+    - git config remote.origin.url https://unused-account:$CONSORTIUM_MIRRORING@$CI_SERVER_HOST/$CI_PROJECT_PATH.git
+    - git push -o ci.skip --all --verbose origin
