@@ -3100,7 +3100,7 @@
            endif
 
            do n = 1, num_avail_hist_fields_2D
-              if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
 
               do j = jlo, jhi
               do i = ilo, ihi
@@ -3674,7 +3674,7 @@
 
            do n = 1, num_avail_hist_fields_3Dc
               nn = n2D + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
 
               do k = 1, ncat_hist
               do j = jlo, jhi
@@ -3723,7 +3723,7 @@
 
            do n = 1, num_avail_hist_fields_3Dz
               nn = n3Dccum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
 
               do k = 1, nzilyr
               do j = jlo, jhi
@@ -3741,7 +3741,7 @@
            enddo                ! n
            do n = 1, num_avail_hist_fields_3Db
               nn = n3Dzcum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nzblyr
               do j = jlo, jhi
               do i = ilo, ihi
@@ -3759,7 +3759,7 @@
 
            do n = 1, num_avail_hist_fields_3Da
               nn = n3Dbcum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nzalyr
               do j = jlo, jhi
               do i = ilo, ihi
@@ -3777,7 +3777,7 @@
 
            do n = 1, num_avail_hist_fields_3Df
               nn = n3Dacum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nfsd
               do j = jlo, jhi
               do i = ilo, ihi
@@ -3795,7 +3795,7 @@
 
            do n = 1, num_avail_hist_fields_4Di
               nn = n3Dfcum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nzilyr
               do ic = 1, ncat_hist
               do j = jlo, jhi
@@ -3815,7 +3815,7 @@
 
            do n = 1, num_avail_hist_fields_4Ds
               nn = n4Dicum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then 
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nzslyr
               do ic = 1, ncat_hist
               do j = jlo, jhi
@@ -3835,7 +3835,7 @@
 
            do n = 1, num_avail_hist_fields_4Df
               nn = n4Dscum + n
-              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then
+              if (avail_hist_fields(nn)%vhistfreq == histfreq(ns) .or. write_ic) then
               do k = 1, nfsd
               do ic = 1, ncat_hist
               do j = jlo, jhi
